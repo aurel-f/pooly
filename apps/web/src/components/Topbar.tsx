@@ -3,6 +3,8 @@ import poolySidebarLogo from '@/assets/pooly-logo-sidebar.svg'
 import type { User } from '../types'
 import type { Theme } from '../hooks/useTheme'
 import { useInstallation } from '../context/InstallationContext'
+import { useT } from '../context/LocaleContext'
+import type { Locale } from '../i18n/translations'
 import BottomNav from './BottomNav'
 
 type Page = 'journal' | 'mesures' | 'historique'
@@ -68,6 +70,46 @@ function ThemeSwitch({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) =
   )
 }
 
+function LocaleSwitch({ locale, setLocale }: { locale: Locale; setLocale: (l: Locale) => void }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '4px 20px',
+      margin: '0 0 4px',
+    }}>
+      {(['fr', 'en'] as Locale[]).map((l, i) => (
+        <>
+          {i > 0 && (
+            <div key={`sep-${l}`} style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.08)' }} />
+          )}
+          <button
+            key={l}
+            onClick={() => setLocale(l)}
+            style={{
+              flex: 1,
+              padding: '5px 0',
+              borderRadius: '6px',
+              border: 'none',
+              background: locale === l ? 'rgba(56,189,248,0.12)' : 'transparent',
+              color: locale === l ? '#38bdf8' : 'rgba(255,255,255,0.3)',
+              fontSize: '11px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: "'IBM Plex Mono', monospace",
+              transition: 'all 0.15s',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {l.toUpperCase()}
+          </button>
+        </>
+      ))}
+    </div>
+  )
+}
+
 type Props = {
   onAdd?: () => void
   onLogout?: () => void
@@ -82,6 +124,7 @@ type Props = {
 
 export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, page = 'journal', onNavigate, user, theme = 'auto', setTheme }: Props) {
   const { installations, active, setActive } = useInstallation()
+  const { t, locale, setLocale } = useT()
 
   return (
     <>
@@ -119,7 +162,7 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
               marginTop: '3px',
               letterSpacing: '0.04em',
             }}>
-              {user?.first_name ? `BONJOUR ${user.first_name.toUpperCase()}` : 'MA PISCINE'}
+              {user?.first_name ? `${t('bonjour')} ${user.first_name.toUpperCase()}` : t('ma_piscine')}
             </div>
           </div>
         </div>
@@ -161,7 +204,7 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
                   cursor: 'pointer', textAlign: 'left', padding: '2px 0',
                 }}
               >
-                + Ajouter une installation
+                {t('nav_ajouter_installation')}
               </button>
             )}
           </div>
@@ -176,7 +219,7 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
               <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            Journal
+            {t('nav_journal')}
           </button>
 
           <button
@@ -186,7 +229,7 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </svg>
-            Mesures
+            {t('nav_mesures')}
           </button>
 
           <button
@@ -197,29 +240,30 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            Historique
+            {t('nav_historique')}
           </button>
         </nav>
 
         <div className="sidebar-footer">
           {onAdd && (
             <button className="btn-sidebar-add" onClick={onAdd}>
-              + Nouvelle entrée
+              {t('nav_nouvelle_entree')}
             </button>
           )}
           {setTheme && <ThemeSwitch theme={theme} setTheme={setTheme} />}
+          <LocaleSwitch locale={locale} setLocale={setLocale} />
           {onProfile && (
             <button className="btn-sidebar-logout" onClick={onProfile} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
-              Mon profil
+              {t('nav_mon_profil')}
             </button>
           )}
           {onLogout && (
             <button className="btn-sidebar-logout" onClick={onLogout}>
-              Déconnexion
+              {t('nav_deconnexion')}
             </button>
           )}
           <div style={{
@@ -246,7 +290,7 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
-              Déco
+              {locale === 'fr' ? 'Déco' : 'Out'}
             </button>
           )}
         </div>

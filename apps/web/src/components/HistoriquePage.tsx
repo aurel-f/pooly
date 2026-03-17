@@ -9,6 +9,8 @@ import {
   getTempStatus,
   extractMeasuredParams,
 } from '../utils'
+import { useT } from '../context/LocaleContext'
+import type { Locale } from '../i18n/translations'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -17,14 +19,10 @@ type Category = 'mesure' | 'traitement' | 'entretien'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-const MOIS_FR_LONG = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-]
-
-function monthLabel(yearMonth: string): string {
+function monthLabel(yearMonth: string, locale: Locale): string {
   const [y, m] = yearMonth.split('-')
-  return `${MOIS_FR_LONG[parseInt(m) - 1]} ${y}`
+  const d = new Date(parseInt(y), parseInt(m) - 1, 1)
+  return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', { month: 'long', year: 'numeric' })
 }
 
 function formatDate(dateStr: string): string {
@@ -53,17 +51,6 @@ const CATEGORY_ICON: Record<Category, { emoji: string; bg: string }> = {
   mesure:      { emoji: '🧪', bg: '#eef2ff' },
   traitement:  { emoji: '🧴', bg: '#f3e8ff' },
   entretien:   { emoji: '🔧', bg: '#e0f2fe' },
-}
-
-const TYPE_PILL: Record<'traitement' | 'entretien', { label: string; color: string; bg: string }> = {
-  traitement: { label: 'Traitement', color: 'var(--badge-purple-text)', bg: 'var(--badge-purple-bg)' },
-  entretien:  { label: 'Entretien',  color: 'var(--badge-blue-text)',   bg: 'var(--badge-blue-bg)'   },
-}
-
-const STATUS_CFG = {
-  clear:  { label: 'Normal',       color: 'var(--status-ok-text)',     bg: 'var(--status-ok-bg)'     },
-  cloudy: { label: 'À surveiller', color: 'var(--status-warn-text)',   bg: 'var(--status-warn-bg)'   },
-  green:  { label: 'Hors norme',   color: 'var(--status-danger-text)', bg: 'var(--status-danger-bg)' },
 }
 
 const PARAM_STATUS_STYLE: Record<'normal' | 'warn' | 'bad', { color: string; bg: string }> = {
@@ -123,10 +110,22 @@ function EntryCard({ action, products, onEdit, onDelete }: {
   onEdit?: (action: Action) => void
   onDelete?: (action: Action) => void
 }) {
+  const { t } = useT()
   const [hovered, setHovered] = useState(false)
   const cat = getCategory(action)
   const title = getTitle(action, products)
   const { emoji, bg: iconBg } = CATEGORY_ICON[cat]
+
+  const STATUS_CFG = {
+    clear:  { label: t('status_normal'),     color: 'var(--status-ok-text)',     bg: 'var(--status-ok-bg)'     },
+    cloudy: { label: t('status_surveiller'), color: 'var(--status-warn-text)',   bg: 'var(--status-warn-bg)'   },
+    green:  { label: t('status_hors_norme'), color: 'var(--status-danger-text)', bg: 'var(--status-danger-bg)' },
+  }
+
+  const TYPE_PILL: Record<'traitement' | 'entretien', { label: string; color: string; bg: string }> = {
+    traitement: { label: t('historique_traitements').split(' ').slice(1).join(' '), color: 'var(--badge-purple-text)', bg: 'var(--badge-purple-bg)' },
+    entretien:  { label: t('historique_entretiens').split(' ').slice(1).join(' '),  color: 'var(--badge-blue-text)',   bg: 'var(--badge-blue-bg)'   },
+  }
 
   // Status badge (mesure) or type pill (traitement/entretien)
   let badge: React.ReactNode = null
@@ -219,7 +218,7 @@ function EntryCard({ action, products, onEdit, onDelete }: {
           {onEdit && (
             <button
               onClick={() => onEdit(action)}
-              title="Modifier"
+              title={t('modal_modifier')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
             >
               <Pencil size={13} />
@@ -228,7 +227,7 @@ function EntryCard({ action, products, onEdit, onDelete }: {
           {onDelete && (
             <button
               onClick={() => onDelete(action)}
-              title="Supprimer"
+              title={t('modal_supprimer')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
             >
               <Trash2 size={13} />
@@ -242,13 +241,6 @@ function EntryCard({ action, products, onEdit, onDelete }: {
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-const FILTER_BTNS: { label: string; value: FilterType }[] = [
-  { label: 'Tout',          value: 'all' },
-  { label: '🧪 Mesures',    value: 'mesure' },
-  { label: '🧴 Traitements', value: 'traitement' },
-  { label: '🔧 Entretiens', value: 'entretien' },
-]
-
 type Props = {
   actions: Action[]
   products: Product[]
@@ -257,8 +249,16 @@ type Props = {
 }
 
 export default function HistoriquePage({ actions, products, onEdit, onDelete }: Props) {
+  const { t, locale } = useT()
   const [filter, setFilter] = useState<FilterType>('all')
   const [search, setSearch] = useState('')
+
+  const FILTER_BTNS: { label: string; value: FilterType }[] = [
+    { label: t('historique_tout'),         value: 'all' },
+    { label: t('historique_mesures'),      value: 'mesure' },
+    { label: t('historique_traitements'),  value: 'traitement' },
+    { label: t('historique_entretiens'),   value: 'entretien' },
+  ]
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -292,10 +292,10 @@ export default function HistoriquePage({ actions, products, onEdit, onDelete }: 
       {/* En-tête */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: '"Sora", sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
-          Historique
+          {t('page_historique_title')}
         </div>
         <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-          Toutes les entrées du journal
+          {t('page_historique_sub')}
         </div>
       </div>
 
@@ -330,7 +330,7 @@ export default function HistoriquePage({ actions, products, onEdit, onDelete }: 
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher..."
+          placeholder={t('historique_rechercher')}
           style={{
             fontFamily: '"Sora", sans-serif',
             fontSize: 11, color: 'var(--text-primary)',
@@ -351,7 +351,7 @@ export default function HistoriquePage({ actions, products, onEdit, onDelete }: 
           minHeight: 120,
           fontFamily: '"Sora", sans-serif', fontSize: 13, color: 'var(--text-muted)',
         }}>
-          Aucune entrée trouvée
+          {t('historique_aucune_entree')}
         </div>
       ) : (
         grouped.map(({ ym, list }) => (
@@ -363,7 +363,7 @@ export default function HistoriquePage({ actions, products, onEdit, onDelete }: 
               letterSpacing: '0.06em', color: 'var(--text-muted)',
               marginBottom: 8,
             }}>
-              {monthLabel(ym)}
+              {monthLabel(ym, locale)}
             </div>
             {list.map(action => (
               <EntryCard key={action.id} action={action} products={products} onEdit={onEdit} onDelete={onDelete} />

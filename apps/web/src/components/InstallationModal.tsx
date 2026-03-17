@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useInstallation } from '../context/InstallationContext'
+import { useT } from '../context/LocaleContext'
 
 type Props = {
   open: boolean
@@ -11,6 +12,7 @@ type Props = {
 }
 
 export default function InstallationModal({ open, onClose }: Props) {
+  const { t } = useT()
   const { addInstallation } = useInstallation()
   const [name, setName] = useState('')
   const [type, setType] = useState<'piscine' | 'spa'>('piscine')
@@ -20,7 +22,7 @@ export default function InstallationModal({ open, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) { setError('Le nom est requis.'); return }
+    if (!name.trim()) { setError(t('modal_install_nom_requis')); return }
     setLoading(true)
     setError(null)
     try {
@@ -55,14 +57,14 @@ export default function InstallationModal({ open, onClose }: Props) {
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle style={{ fontFamily: '"Sora", sans-serif', fontWeight: 600 }}>
-            Nouvelle installation
+            {t('modal_install_title')}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 18, paddingTop: 4 }}>
           {/* Nom */}
           <div style={{ display: 'grid', gap: 6 }}>
-            <Label htmlFor="inst-name">Nom</Label>
+            <Label htmlFor="inst-name">{t('modal_install_nom')}</Label>
             <Input
               id="inst-name"
               value={name}
@@ -73,22 +75,22 @@ export default function InstallationModal({ open, onClose }: Props) {
 
           {/* Type */}
           <div style={{ display: 'grid', gap: 8 }}>
-            <Label>Type</Label>
+            <Label>{t('modal_install_type')}</Label>
             <div style={{ display: 'flex', gap: 10 }}>
-              {([['piscine', '🏊', 'Piscine'], ['spa', '🛁', 'Spa']] as const).map(([t, icon, label]) => (
+              {([['piscine', '🏊', t('modal_install_piscine')], ['spa', '🛁', t('modal_install_spa')]] as const).map(([tp, icon, label]) => (
                 <button
-                  key={t}
+                  key={tp}
                   type="button"
-                  onClick={() => setType(t)}
+                  onClick={() => setType(tp)}
                   style={{
                     ...cardBase,
-                    borderColor: type === t ? 'rgba(56,189,248,0.35)' : 'var(--border)',
-                    background: type === t ? 'rgba(56,189,248,0.1)' : 'var(--bg-surface-2)',
-                    color: type === t ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    borderColor: type === tp ? 'rgba(56,189,248,0.35)' : 'var(--border)',
+                    background: type === tp ? 'rgba(56,189,248,0.1)' : 'var(--bg-surface-2)',
+                    color: type === tp ? 'var(--text-primary)' : 'var(--text-secondary)',
                   }}
                 >
                   <span style={{ fontSize: 22 }}>{icon}</span>
-                  {label}
+                  {label.replace(/^.\s/, '')}
                 </button>
               ))}
             </div>
@@ -96,9 +98,9 @@ export default function InstallationModal({ open, onClose }: Props) {
 
           {/* Désinfectant */}
           <div style={{ display: 'grid', gap: 8 }}>
-            <Label>Désinfectant</Label>
+            <Label>{t('modal_install_desinfectant')}</Label>
             <div style={{ display: 'flex', gap: 8 }}>
-              {([['chlore', 'Chlore'], ['brome', 'Brome']] as const).map(([s, label]) => (
+              {([['chlore', t('modal_install_chlore')], ['brome', t('modal_install_brome')]] as const).map(([s, label]) => (
                 <button
                   key={s}
                   type="button"
@@ -123,7 +125,7 @@ export default function InstallationModal({ open, onClose }: Props) {
           )}
 
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Création…' : 'Créer l\'installation'}
+            {loading ? t('modal_install_creation') : t('modal_install_creer')}
           </Button>
         </form>
       </DialogContent>

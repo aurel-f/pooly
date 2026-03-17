@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import type { User } from '../types'
 import poolySidebarLogo from '@/assets/pooly-logo-sidebar.svg'
+import { useT } from '../context/LocaleContext'
 
 type AuthView = 'login' | 'register' | 'forgot' | 'reset'
 
@@ -152,10 +153,11 @@ function PwField({
 }
 
 function StrengthBar({ password }: { password: string }) {
+  const { t } = useT()
   if (!password) return null
   const s = pwStrength(password)
   const colors = ['var(--status-danger-text)', 'var(--status-warn-text)', 'var(--status-ok-text)']
-  const labels = ['Faible', 'Moyen', 'Fort']
+  const labels = [t('auth_mdp_faible_label'), t('auth_mdp_moyen_label'), t('auth_mdp_fort_label')]
   return (
     <div style={{ marginTop: 6 }}>
       <div style={{ display: 'flex', gap: 4 }}>
@@ -185,6 +187,8 @@ const linkStyle: React.CSSProperties = {
 type Props = { onLogin: (user: User) => void }
 
 export default function LoginPage({ onLogin }: Props) {
+  const { t } = useT()
+
   const initView = (): AuthView => {
     const h = window.location.hash.replace(/^#/, '')
     return h.startsWith('reset-password') ? 'reset' : 'login'
@@ -237,10 +241,10 @@ export default function LoginPage({ onLogin }: Props) {
   }
 
   const SUBTITLE: Record<AuthView, string> = {
-    login: 'Connectez-vous à votre espace',
-    register: 'Créer un compte',
-    forgot: 'Réinitialiser le mot de passe',
-    reset: 'Nouveau mot de passe',
+    login: t('auth_connectez'),
+    register: t('auth_creer_compte'),
+    forgot: t('auth_reinit_mdp'),
+    reset: t('auth_nouveau_mdp'),
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -254,18 +258,18 @@ export default function LoginPage({ onLogin }: Props) {
         credentials: 'same-origin',
         body: JSON.stringify({ email: lEmail, password: lPw }),
       })
-      if (!res.ok) { setLError('Email ou mot de passe incorrect.'); return }
+      if (!res.ok) { setLError(t('auth_erreur')); return }
       const data = await res.json()
       onLogin(data.user)
-    } catch { setLError('Erreur de connexion') }
+    } catch { setLError(t('auth_erreur_connexion')) }
     finally { setLLoading(false) }
   }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setRPwError(null); setRConfirmError(null); setRError(null)
-    if (pwStrength(rPw) < 2) { setRPwError('8 caractères minimum, avec une majuscule et un chiffre'); return }
-    if (rPw !== rPwConfirm) { setRConfirmError('Les mots de passe ne correspondent pas'); return }
+    if (pwStrength(rPw) < 2) { setRPwError(t('auth_mdp_faible')); return }
+    if (rPw !== rPwConfirm) { setRConfirmError(t('auth_mdp_mismatch')); return }
     setRLoading(true)
     try {
       const res = await fetch('/api/auth/register', {
@@ -276,12 +280,12 @@ export default function LoginPage({ onLogin }: Props) {
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
-        setRError((d as { detail?: string }).detail ?? 'Erreur lors de la création du compte')
+        setRError((d as { detail?: string }).detail ?? t('auth_erreur_compte'))
         return
       }
       const data = await res.json()
       onLogin(data.user)
-    } catch { setRError('Erreur de connexion') }
+    } catch { setRError(t('auth_erreur_connexion')) }
     finally { setRLoading(false) }
   }
 
@@ -301,8 +305,8 @@ export default function LoginPage({ onLogin }: Props) {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
     setResetError(null)
-    if (resetPw.length < 8) { setResetError('Au moins 8 caractères requis'); return }
-    if (resetPw !== resetConfirm) { setResetError('Les mots de passe ne correspondent pas'); return }
+    if (resetPw.length < 8) { setResetError(t('auth_min_8')); return }
+    if (resetPw !== resetConfirm) { setResetError(t('auth_mdp_mismatch')); return }
     setResetLoading(true)
     try {
       const res = await fetch('/api/auth/reset-password', {
@@ -310,9 +314,9 @@ export default function LoginPage({ onLogin }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: resetToken, password: resetPw }),
       })
-      if (!res.ok) { setResetError('Lien invalide ou expiré'); return }
+      if (!res.ok) { setResetError(t('auth_lien_expire')); return }
       setResetSuccess(true)
-    } catch { setResetError('Erreur de connexion') }
+    } catch { setResetError(t('auth_erreur_connexion')) }
     finally { setResetLoading(false) }
   }
 
@@ -335,7 +339,7 @@ export default function LoginPage({ onLogin }: Props) {
                 <span style={{ color: 'var(--accent)' }}>y</span>
               </div>
               <div style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: "'IBM Plex Mono', monospace", marginTop: 3, letterSpacing: '0.04em' }}>
-                MA PISCINE
+                {t('auth_ma_piscine')}
               </div>
             </div>
           </div>
@@ -352,24 +356,24 @@ export default function LoginPage({ onLogin }: Props) {
           {view === 'login' && (
             <form onSubmit={handleLogin} style={{ display: 'grid', gap: 14 }}>
               <div>
-                <FieldLabel>Email</FieldLabel>
+                <FieldLabel>{t('auth_email')}</FieldLabel>
                 <FieldInput
                   type="email" value={lEmail} onChange={e => setLEmail(e.target.value)}
-                  placeholder="vous@exemple.com" required
+                  placeholder={t('auth_email_placeholder')} required
                 />
               </div>
               <div>
-                <FieldLabel>Mot de passe</FieldLabel>
+                <FieldLabel>{t('auth_password')}</FieldLabel>
                 <PwField value={lPw} onChange={setLPw} show={lShowPw} onToggle={() => setLShowPw(p => !p)} />
               </div>
               {lError && <AlertBand>{lError}</AlertBand>}
-              <PrimaryBtn loading={lLoading}>{lLoading ? 'Connexion…' : 'Se connecter'}</PrimaryBtn>
+              <PrimaryBtn loading={lLoading}>{lLoading ? t('auth_connexion_loading') : t('auth_connexion')}</PrimaryBtn>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <button type="button" onClick={() => setView('register')} style={linkStyle}>
-                  Pas encore de compte ? Créer un compte
+                  {t('auth_pas_compte')}
                 </button>
                 <button type="button" onClick={() => setView('forgot')} style={linkStyle}>
-                  Mot de passe oublié ?
+                  {t('auth_oublie')}
                 </button>
               </div>
             </form>
@@ -379,21 +383,21 @@ export default function LoginPage({ onLogin }: Props) {
           {view === 'register' && (
             <form onSubmit={handleRegister} style={{ display: 'grid', gap: 14 }}>
               <div>
-                <FieldLabel>Prénom</FieldLabel>
+                <FieldLabel>{t('auth_prenom')}</FieldLabel>
                 <FieldInput
                   type="text" value={rName} onChange={e => setRName(e.target.value)}
-                  placeholder="Jean" required
+                  placeholder={t('auth_prenom_placeholder')} required
                 />
               </div>
               <div>
-                <FieldLabel>Email</FieldLabel>
+                <FieldLabel>{t('auth_email')}</FieldLabel>
                 <FieldInput
                   type="email" value={rEmail} onChange={e => setREmail(e.target.value)}
-                  placeholder="vous@exemple.com" required
+                  placeholder={t('auth_email_placeholder')} required
                 />
               </div>
               <div>
-                <FieldLabel>Mot de passe</FieldLabel>
+                <FieldLabel>{t('auth_password')}</FieldLabel>
                 <PwField
                   value={rPw} onChange={setRPw}
                   show={rShowPw} onToggle={() => setRShowPw(p => !p)}
@@ -403,7 +407,7 @@ export default function LoginPage({ onLogin }: Props) {
                 {rPwError && <FieldError>{rPwError}</FieldError>}
               </div>
               <div>
-                <FieldLabel>Confirmer le mot de passe</FieldLabel>
+                <FieldLabel>{t('auth_confirm_password')}</FieldLabel>
                 <PwField
                   value={rPwConfirm} onChange={setRPwConfirm}
                   show={rShowConfirm} onToggle={() => setRShowConfirm(p => !p)}
@@ -412,10 +416,10 @@ export default function LoginPage({ onLogin }: Props) {
                 {rConfirmError && <FieldError>{rConfirmError}</FieldError>}
               </div>
               {rError && <AlertBand>{rError}</AlertBand>}
-              <PrimaryBtn loading={rLoading}>{rLoading ? 'Création…' : 'Créer mon compte'}</PrimaryBtn>
+              <PrimaryBtn loading={rLoading}>{rLoading ? t('auth_creer_loading') : t('auth_creer')}</PrimaryBtn>
               <div>
                 <button type="button" onClick={() => setView('login')} style={linkStyle}>
-                  Déjà un compte ? Se connecter
+                  {t('auth_deja_compte')}
                 </button>
               </div>
             </form>
@@ -426,26 +430,26 @@ export default function LoginPage({ onLogin }: Props) {
             fSuccess ? (
               <div style={{ display: 'grid', gap: 20 }}>
                 <AlertBand variant="success">
-                  Si cet email est enregistré, un lien vous a été envoyé.
+                  {t('auth_reset_envoye')}
                 </AlertBand>
                 <button type="button" onClick={goLogin} style={linkStyle}>
-                  ← Retour à la connexion
+                  {t('auth_retour')}
                 </button>
               </div>
             ) : (
               <form onSubmit={handleForgot} style={{ display: 'grid', gap: 14 }}>
                 <div>
-                  <FieldLabel>Email</FieldLabel>
+                  <FieldLabel>{t('auth_email')}</FieldLabel>
                   <FieldInput
                     type="email" value={fEmail} onChange={e => setFEmail(e.target.value)}
-                    placeholder="vous@exemple.com" required
+                    placeholder={t('auth_email_placeholder')} required
                   />
                 </div>
                 <PrimaryBtn loading={fLoading}>
-                  {fLoading ? 'Envoi…' : 'Envoyer le lien de réinitialisation'}
+                  {fLoading ? t('auth_envoyer_loading') : t('auth_envoyer')}
                 </PrimaryBtn>
                 <button type="button" onClick={goLogin} style={linkStyle}>
-                  ← Retour à la connexion
+                  {t('auth_retour')}
                 </button>
               </form>
             )
@@ -456,19 +460,19 @@ export default function LoginPage({ onLogin }: Props) {
             resetSuccess ? (
               <div style={{ display: 'grid', gap: 20 }}>
                 <AlertBand variant="success">
-                  Mot de passe modifié avec succès.
+                  {t('auth_mdp_modifie')}
                 </AlertBand>
                 <button type="button" onClick={goLogin} style={linkStyle}>
-                  Se connecter →
+                  {t('auth_se_connecter')}
                 </button>
               </div>
             ) : (
               <form onSubmit={handleReset} style={{ display: 'grid', gap: 14 }}>
                 {!resetToken && (
-                  <AlertBand>Lien invalide ou manquant.</AlertBand>
+                  <AlertBand>{t('auth_lien_invalide')}</AlertBand>
                 )}
                 <div>
-                  <FieldLabel>Nouveau mot de passe</FieldLabel>
+                  <FieldLabel>{t('auth_nouveau_mdp')}</FieldLabel>
                   <PwField
                     value={resetPw} onChange={setResetPw}
                     show={resetShowPw} onToggle={() => setResetShowPw(p => !p)}
@@ -476,7 +480,7 @@ export default function LoginPage({ onLogin }: Props) {
                   <StrengthBar password={resetPw} />
                 </div>
                 <div>
-                  <FieldLabel>Confirmer le mot de passe</FieldLabel>
+                  <FieldLabel>{t('auth_confirm_password')}</FieldLabel>
                   <PwField
                     value={resetConfirm} onChange={setResetConfirm}
                     show={resetShowConfirm} onToggle={() => setResetShowConfirm(p => !p)}
@@ -484,10 +488,10 @@ export default function LoginPage({ onLogin }: Props) {
                 </div>
                 {resetError && <AlertBand>{resetError}</AlertBand>}
                 <PrimaryBtn loading={resetLoading} disabled={!resetToken}>
-                  {resetLoading ? 'Enregistrement…' : 'Enregistrer le nouveau mot de passe'}
+                  {resetLoading ? t('auth_enregistrer_mdp_loading') : t('auth_enregistrer_mdp')}
                 </PrimaryBtn>
                 <button type="button" onClick={goLogin} style={linkStyle}>
-                  ← Retour à la connexion
+                  {t('auth_retour')}
                 </button>
               </form>
             )

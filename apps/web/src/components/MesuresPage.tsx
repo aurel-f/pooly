@@ -14,6 +14,8 @@ import {
   getDaysSince,
   extractMeasuredParams,
 } from '../utils'
+import { useT } from '../context/LocaleContext'
+import type { Locale } from '../i18n/translations'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -22,19 +24,17 @@ type ParamStatus = 'normal' | 'warn' | 'bad'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-const MOIS_FR = [
-  'jan', 'fév', 'mars', 'avr', 'mai', 'juin',
-  'juil', 'août', 'sept', 'oct', 'nov', 'déc',
-]
-
 function formatShort(dateStr: string): string {
   const [, m, d] = dateStr.split('-')
   return `${d}/${m}`
 }
 
-function formatDateFR(dateStr: string): string {
+function formatDateLong(dateStr: string, locale: Locale): string {
   const [y, m, d] = dateStr.split('-')
-  return `${parseInt(d)} ${MOIS_FR[parseInt(m) - 1]} ${y}`
+  const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
+  return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  })
 }
 
 function valueColor(status: ParamStatus): string {
@@ -64,9 +64,10 @@ const CHART_H = 72
 type BarChartProps = {
   bars: { date: string; value: number; colorClass: string; label: string }[]
   empty: string
+  notEnough: string
 }
 
-function BarChart({ bars, empty }: BarChartProps) {
+function BarChart({ bars, empty, notEnough }: BarChartProps) {
   if (bars.length === 0) {
     return (
       <p style={{ fontFamily: '"Sora", sans-serif', fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
@@ -77,7 +78,7 @@ function BarChart({ bars, empty }: BarChartProps) {
   if (bars.length < 2) {
     return (
       <p style={{ fontFamily: '"Sora", sans-serif', fontSize: 12, color: 'var(--text-muted)', margin: 0, textAlign: 'center' }}>
-        Pas assez de données pour afficher une tendance
+        {notEnough}
       </p>
     )
   }
@@ -101,12 +102,13 @@ function BarChart({ bars, empty }: BarChartProps) {
 // ── Status badge ───────────────────────────────────────────────────────────
 
 function StatusBadge({ ph, chlore, tac }: { ph: number | null; chlore: number | null; tac: number | null }) {
+  const { t } = useT()
   const { status, hasData } = getWaterStatus({ ph, chlore, tac })
   if (!hasData) return <span style={{ color: 'var(--text-muted)', fontFamily: '"IBM Plex Mono", monospace', fontSize: 10 }}>—</span>
   const cfg = {
-    clear:  { label: 'Normal',       color: 'var(--status-ok-text)',     bg: 'var(--status-ok-bg)'     },
-    cloudy: { label: 'À surveiller', color: 'var(--status-warn-text)',   bg: 'var(--status-warn-bg)'   },
-    green:  { label: 'Hors norme',   color: 'var(--status-danger-text)', bg: 'var(--status-danger-bg)' },
+    clear:  { label: t('status_normal'),     color: 'var(--status-ok-text)',     bg: 'var(--status-ok-bg)'     },
+    cloudy: { label: t('status_surveiller'), color: 'var(--status-warn-text)',   bg: 'var(--status-warn-bg)'   },
+    green:  { label: t('status_hors_norme'), color: 'var(--status-danger-text)', bg: 'var(--status-danger-bg)' },
   }[status]
   return (
     <span style={{
@@ -151,21 +153,20 @@ const kpiSub: React.CSSProperties = {
   color: 'var(--text-muted)',
 }
 
-// ── Period filter ──────────────────────────────────────────────────────────
-
-const PERIODS: { label: string; value: Period }[] = [
-  { label: 'Ce mois', value: 1 },
-  { label: '3 mois',  value: 3 },
-  { label: '6 mois',  value: 6 },
-  { label: 'Tout',    value: null },
-]
-
 // ── Main component ─────────────────────────────────────────────────────────
 
 type Props = { actions: Action[] }
 
 export default function MesuresPage({ actions }: Props) {
+  const { t, locale } = useT()
   const [period, setPeriod] = useState<Period>(1)
+
+  const PERIODS: { label: string; value: Period }[] = [
+    { label: t('mesures_filtre_mois'),  value: 1 },
+    { label: t('mesures_filtre_3mois'), value: 3 },
+    { label: t('mesures_filtre_6mois'), value: 6 },
+    { label: t('mesures_filtre_tout'),  value: null },
+  ]
 
   const today = new Date()
   const yearMonth = today.toISOString().slice(0, 7)
@@ -236,12 +237,12 @@ export default function MesuresPage({ actions }: Props) {
 
   // ── Trend sub-text ────────────────────────────────────────────────────────
   function trendNode() {
-    if (!phTrend) return <span style={kpiSub}>Pas assez de données</span>
+    if (!phTrend) return <span style={kpiSub}>{t('mesures_pas_assez')}</span>
     const { trend } = phTrend
     const cfg = {
-      up:     { icon: '↑', label: 'En amélioration', color: 'var(--status-ok-text)'     },
-      down:   { icon: '↓', label: 'En baisse',        color: 'var(--status-danger-text)' },
-      stable: { icon: '→', label: 'Stable',           color: 'var(--text-muted)'         },
+      up:     { icon: '↑', label: t('mesures_hausse'), color: 'var(--status-ok-text)'     },
+      down:   { icon: '↓', label: t('mesures_baisse'), color: 'var(--status-danger-text)' },
+      stable: { icon: '→', label: t('mesures_stable'), color: 'var(--text-muted)'         },
     }[trend]
     return (
       <span style={{ ...kpiSub, color: cfg.color, fontWeight: 500 }}>
@@ -250,15 +251,21 @@ export default function MesuresPage({ actions }: Props) {
     )
   }
 
+  function daysAgoLabel(n: number): string {
+    if (n === 0) return t('kpi_aujourd_hui')
+    if (n === 1) return t('mesures_il_y_a_1')
+    return [t('mesures_il_y_a_n'), String(n), t('mesures_jours')].filter(Boolean).join(' ')
+  }
+
   return (
     <div>
       {/* En-tête */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: '"Sora", sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
-          Mesures
+          {t('page_mesures_title')}
         </div>
         <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-          Suivi des paramètres de qualité de l'eau
+          {t('page_mesures_sub')}
         </div>
       </div>
 
@@ -267,14 +274,14 @@ export default function MesuresPage({ actions }: Props) {
 
         {/* KPI 1 */}
         <div style={{ ...card, padding: '12px 14px' }}>
-          <div style={kpiLabel}>Mesures ce mois</div>
+          <div style={kpiLabel}>{t('mesures_ce_mois')}</div>
           <div style={kpiValue}>{measuresThisMonth}</div>
-          <div style={kpiSub}>relevés enregistrés</div>
+          <div style={kpiSub}>{t('mesures_releves')}</div>
         </div>
 
         {/* KPI 2 — Tendance pH */}
         <div style={{ ...card, padding: '12px 14px' }}>
-          <div style={kpiLabel}>Tendance pH</div>
+          <div style={kpiLabel}>{t('mesures_tendance_ph')}</div>
           {phTrend ? (
             <div style={{ ...kpiValue, fontSize: 16 }}>
               {phTrend.first.toFixed(1)} → {phTrend.last.toFixed(1)}
@@ -287,18 +294,16 @@ export default function MesuresPage({ actions }: Props) {
 
         {/* KPI 3 — Dernier relevé */}
         <div style={{ ...card, padding: '12px 14px' }}>
-          <div style={kpiLabel}>Dernier relevé complet</div>
+          <div style={kpiLabel}>{t('mesures_dernier_releve')}</div>
           {lastMeasure ? (
             <>
-              <div style={{ ...kpiValue, fontSize: 16 }}>{formatDateFR(lastMeasure.date)}</div>
-              <div style={kpiSub}>
-                {(() => { const n = getDaysSince(lastMeasure.date); return n === 0 ? "Aujourd'hui" : n === 1 ? 'Il y a 1 jour' : `Il y a ${n} jours` })()}
-              </div>
+              <div style={{ ...kpiValue, fontSize: 16 }}>{formatDateLong(lastMeasure.date, locale)}</div>
+              <div style={kpiSub}>{daysAgoLabel(getDaysSince(lastMeasure.date))}</div>
             </>
           ) : (
             <>
               <div style={{ ...kpiValue, color: 'var(--text-muted)' }}>—</div>
-              <div style={kpiSub}>Aucun relevé</div>
+              <div style={kpiSub}>{t('mesures_aucun_releve')}</div>
             </>
           )}
         </div>
@@ -337,17 +342,17 @@ export default function MesuresPage({ actions }: Props) {
         {/* Graphique pH */}
         <div style={{ ...card, padding: 16 }}>
           <div style={{ fontFamily: '"Sora", sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>
-            Évolution pH
+            {t('graph_evolution_ph')}
           </div>
-          <BarChart bars={phBars} empty="Aucune mesure pH dans cette période." />
+          <BarChart bars={phBars} empty={t('mesures_aucune_mesure_ph')} notEnough={t('graph_pas_assez_donnees')} />
         </div>
 
         {/* Graphique Chlore */}
         <div style={{ ...card, padding: 16 }}>
           <div style={{ fontFamily: '"Sora", sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>
-            Évolution chlore libre
+            {t('graph_evolution_chlore')}
           </div>
-          <BarChart bars={clBars} empty="Aucune mesure chlore dans cette période." />
+          <BarChart bars={clBars} empty={t('mesures_aucune_mesure_chlore')} notEnough={t('graph_pas_assez_donnees')} />
         </div>
       </div>
 
@@ -356,23 +361,23 @@ export default function MesuresPage({ actions }: Props) {
         {/* En-tête tableau */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ fontFamily: '"Sora", sans-serif', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
-            Tous les relevés
+            {t('mesures_tous_releves')}
           </div>
           <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, color: 'var(--text-muted)' }}>
-            {tableRows.length} mesure{tableRows.length !== 1 ? 's' : ''}
+            {tableRows.length} {t('mesures_releves')}
           </div>
         </div>
 
         {tableRows.length === 0 ? (
           <p style={{ fontFamily: '"Sora", sans-serif', fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-            Aucun relevé dans cette période.
+            {t('mesures_aucun_releve_periode')}
           </p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="mesures-table">
               <thead>
                 <tr>
-                  {['Date', 'pH', 'Chlore libre', 'TAC', 'Température', 'Statut'].map(col => (
+                  {[t('table_date'), t('param_ph'), t('param_chlore'), t('param_tac'), t('param_temperature'), t('mesures_statut')].map(col => (
                     <th key={col} style={{
                       fontFamily: '"IBM Plex Mono", monospace',
                       fontSize: 10, fontWeight: 500,
@@ -415,4 +420,3 @@ export default function MesuresPage({ actions }: Props) {
     </div>
   )
 }
-

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Action, Product, User } from './types'
 import { useTheme, type Theme } from './hooks/useTheme'
+import { useLocale } from './i18n/useLocale'
+import { LocaleContext, useT } from './context/LocaleContext'
 import { InstallationProvider, useInstallation } from './context/InstallationContext'
 import Topbar from './components/Topbar'
 import ActionForm from './components/ActionForm'
@@ -39,6 +41,7 @@ type AppMainProps = {
 
 function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps) {
   const { active } = useInstallation()
+  const { t } = useT()
   const [actions, setActions] = useState<Action[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
@@ -73,13 +76,12 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
       setActions(actionsData)
       setProducts(productsData)
     } catch {
-      setError('Impossible de charger les données')
+      setError(t('impossible_charger'))
     } finally {
       setLoading(false)
     }
   }, [active?.id])
 
-  // Reload when active installation changes
   useEffect(() => {
     if (active) loadData()
   }, [active?.id])
@@ -118,7 +120,7 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
       const importedActions: Action[] = Array.isArray(data) ? data : data.actions
       if (!Array.isArray(importedActions)) throw new Error()
       if (!window.confirm(
-        `Ce fichier contient ${importedActions.length} action(s).\nCela remplacera toutes vos données actuelles. Confirmer ?`
+        `${t('import_confirm_prefix')} ${importedActions.length} ${t('import_confirm_suffix')}`
       )) return
       const res = await fetch('/api/import', {
         method: 'POST',
@@ -129,7 +131,7 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
       if (!res.ok) throw new Error()
       await loadData()
     } catch {
-      alert('Erreur lors de l\'import. Vérifiez le format du fichier.')
+      alert(t('import_erreur'))
     }
   }
 
@@ -176,7 +178,7 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
     }
   }
 
-  if (loading && actions.length === 0) return <div className="page-loading">Chargement…</div>
+  if (loading && actions.length === 0) return <div className="page-loading">{t('chargement')}</div>
   if (error) return <div className="page-loading" style={{ color: 'var(--pooly-bad-text)' }}>{error}</div>
 
   return (
@@ -207,7 +209,7 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
         <DialogContent className="sm:max-w-md" onOpenAutoFocus={e => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle style={{ fontFamily: '"Sora", sans-serif', fontWeight: 600 }}>
-              Nouvelle entrée
+              {t('modal_title')}
             </DialogTitle>
           </DialogHeader>
           <ActionForm onAdd={handleAdd} products={products} onClose={() => setShowForm(false)} />
@@ -219,7 +221,7 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
         <DialogContent className="sm:max-w-md" onOpenAutoFocus={e => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle style={{ fontFamily: '"Sora", sans-serif', fontWeight: 600 }}>
-              Modifier l'action
+              {t('modal_modifier')}
             </DialogTitle>
           </DialogHeader>
           {editingAction && (
@@ -238,28 +240,28 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle style={{ fontFamily: '"Sora", sans-serif', fontWeight: 600 }}>
-              Supprimer cette entrée ?
+              {t('modal_supprimer_title')}
             </DialogTitle>
           </DialogHeader>
           {deletingAction && (
             <div>
               <p style={{ fontFamily: '"Sora", sans-serif', fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 20px' }}>
-                <strong>{deletingAction.action_type}</strong> du{' '}
+                <strong>{deletingAction.action_type}</strong> {t('modal_supprimer_du')}{' '}
                 {deletingAction.date.split('-').reverse().join('/')}.{' '}
-                Cette action est irréversible.
+                {t('modal_supprimer_irrev')}
               </p>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => setDeletingAction(null)}
                   style={{ fontFamily: '"Sora", sans-serif', fontSize: 13, padding: '6px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-surface)', cursor: 'pointer', color: 'var(--text-secondary)' }}
                 >
-                  Annuler
+                  {t('modal_annuler')}
                 </button>
                 <button
                   onClick={() => handleDelete(deletingAction.id)}
                   style={{ fontFamily: '"Sora", sans-serif', fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 7, border: 'none', background: 'var(--status-danger-text)', cursor: 'pointer', color: 'var(--bg-surface)' }}
                 >
-                  Supprimer
+                  {t('modal_supprimer')}
                 </button>
               </div>
             </div>
@@ -272,7 +274,7 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle style={{ fontFamily: '"Sora", sans-serif', fontWeight: 600 }}>
-              Mon profil
+              {t('profil_title')}
             </DialogTitle>
           </DialogHeader>
           <ProfileDialog
@@ -299,6 +301,7 @@ function AppMain({ user, onLogout, onUserUpdate, theme, setTheme }: AppMainProps
 
 export default function App() {
   const { theme, setTheme } = useTheme()
+  const localeValue = useLocale()
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
 
@@ -322,17 +325,22 @@ export default function App() {
 
   if (authLoading) return <div className="page-loading">Chargement…</div>
 
-  if (!user) return <LoginPage onLogin={handleLoginSuccess} />
-
   return (
-    <InstallationProvider>
-      <AppMain
-        user={user}
-        onLogout={handleLogout}
-        onUserUpdate={setUser}
-        theme={theme}
-        setTheme={setTheme}
-      />
-    </InstallationProvider>
+    <LocaleContext.Provider value={localeValue}>
+      {!user
+        ? <LoginPage onLogin={handleLoginSuccess} />
+        : (
+          <InstallationProvider>
+            <AppMain
+              user={user}
+              onLogout={handleLogout}
+              onUserUpdate={setUser}
+              theme={theme}
+              setTheme={setTheme}
+            />
+          </InstallationProvider>
+        )
+      }
+    </LocaleContext.Provider>
   )
 }

@@ -18,6 +18,7 @@ import {
   getDureteStatus,
 } from '../utils'
 import { useInstallation } from '../context/InstallationContext'
+import { useT } from '../context/LocaleContext'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -266,6 +267,7 @@ type BandeletteProps = {
 }
 
 function BandeletteMode({ row, onChange, sanitizer }: BandeletteProps) {
+  const { t } = useT()
   const [hovered, setHovered] = useState<{ param: string; idx: number } | null>(null)
   const BAND_PARAMS = getBandParams(sanitizer)
 
@@ -280,7 +282,7 @@ function BandeletteMode({ row, onChange, sanitizer }: BandeletteProps) {
     <div style={{ display: 'grid', gap: 14 }}>
       {/* Instruction */}
       <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
-        Comparez et cliquez sur la case correspondante
+        {t('modal_comparez')}
       </div>
 
       {BAND_PARAMS.map(p => {
@@ -373,7 +375,7 @@ function BandeletteMode({ row, onChange, sanitizer }: BandeletteProps) {
       {summaryItems.length > 0 && (
         <div style={{ background: 'var(--bg-surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px' }}>
           <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 6 }}>
-            Résumé de la mesure
+            {t('modal_resume')}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {summaryItems.map(item => (
@@ -448,6 +450,7 @@ type AppareilProps = {
 }
 
 function AppareilMode({ row, onChange, sanitizer }: AppareilProps) {
+  const { t } = useT()
   const APPAREIL_FIELDS = sanitizer === 'brome' ? APPAREIL_FIELDS_BROME : APPAREIL_FIELDS_CHLORE
   const [touched, setTouched] = useState<Partial<Record<AppareilField['key'], boolean>>>({})
   const touch = (k: AppareilField['key']) => setTouched(prev => ({ ...prev, [k]: true }))
@@ -485,7 +488,7 @@ function AppareilMode({ row, onChange, sanitizer }: AppareilProps) {
               )}
             </div>
             <p style={{ fontFamily: '"Sora", sans-serif', fontSize: 11, color: status === 'bad' ? 'var(--status-danger-text)' : 'var(--text-muted)', marginTop: 4, marginBottom: 0 }}>
-              {status === 'bad' ? 'Valeur hors norme' : f.hint}
+              {status === 'bad' ? t('modal_valeur_hors_norme') : f.hint}
             </p>
           </div>
         )
@@ -503,6 +506,7 @@ type MeasureSectionProps = {
 }
 
 function MeasureSection({ row, onChange, sanitizer }: MeasureSectionProps) {
+  const { t } = useT()
   const [mode, setMode] = useState<MesureMode>(readMode)
 
   const switchMode = (m: MesureMode) => { setMode(m); saveMode(m) }
@@ -511,7 +515,7 @@ function MeasureSection({ row, onChange, sanitizer }: MeasureSectionProps) {
     <div style={{ display: 'grid', gap: 12 }}>
       {/* Toggle */}
       <div style={{ display: 'flex', background: 'var(--bg-surface-2)', borderRadius: 8, padding: 3, gap: 2 }}>
-        {([['bandelette', '🧪 Bandelette AquaChek'], ['appareil', '🔬 Appareil numérique']] as [MesureMode, string][]).map(([m, label]) => {
+        {([['bandelette', t('modal_bandelette')], ['appareil', t('modal_appareil')]] as [MesureMode, string][]).map(([m, label]) => {
           const active = mode === m
           return (
             <button
@@ -631,6 +635,7 @@ type Props = {
 }
 
 export default function ActionForm({ onAdd, products: _products, onClose, editAction, onEdit }: Props) {
+  const { t } = useT()
   const { active } = useInstallation()
   const sanitizer = active?.sanitizer ?? 'chlore'
   const installationType = active?.type ?? 'piscine'
@@ -731,7 +736,7 @@ export default function ActionForm({ onAdd, products: _products, onClose, editAc
 
         {/* Date */}
         <div style={{ display: 'grid', gap: 6 }}>
-          <Label htmlFor="date">Date</Label>
+          <Label htmlFor="date">{t('modal_date')}</Label>
           <Input
             id="date"
             type="date"
@@ -750,13 +755,13 @@ export default function ActionForm({ onAdd, products: _products, onClose, editAc
 
         {/* Action rows */}
         <div className="grid gap-2">
-          <Label>Actions</Label>
+          <Label>{t('modal_actions')}</Label>
           {rows.map(row => (
             <ActionRowItem key={row.key} row={row} onChange={updateRow} onRemove={removeRow} canRemove={rows.length > 1} products={_products} actionTypes={actionTypes} sanitizer={sanitizer} />
           ))}
           {measureError && (
             <p style={{ fontFamily: '"Sora", sans-serif', fontSize: 13, color: 'var(--status-danger-text)', margin: 0 }}>
-              Renseignez au moins un paramètre.
+              {t('modal_au_moins_un')}
             </p>
           )}
           {!isEditMode && (
@@ -765,14 +770,14 @@ export default function ActionForm({ onAdd, products: _products, onClose, editAc
               onClick={addRow}
               style={{ border: '1px dashed var(--border)', borderRadius: 8, padding: '8px 14px', background: 'none', color: 'var(--pooly-primary)', fontSize: 13, fontFamily: '"Sora", sans-serif', fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left' }}
             >
-              + Ajouter une action
+              {t('modal_ajouter_action')}
             </button>
           )}
         </div>
 
         {/* Quick tags */}
         <div className="grid gap-2">
-          <Label>Statut rapide</Label>
+          <Label>{t('modal_statut_rapide')}</Label>
           <div className="grid grid-cols-2 gap-2">
             {quickTags.map(tag => (
               <label key={tag} className="flex items-center gap-2" style={{ fontFamily: '"Sora", sans-serif', color: 'var(--pooly-body)', fontSize: 13, textTransform: 'none', letterSpacing: 'normal' }}>
@@ -785,8 +790,8 @@ export default function ActionForm({ onAdd, products: _products, onClose, editAc
 
         {/* Notes */}
         <div className="grid gap-1.5">
-          <Label htmlFor="notes">Notes</Label>
-          <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ex: eau claire, niveau OK" />
+          <Label htmlFor="notes">{t('modal_notes')}</Label>
+          <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('modal_notes_placeholder')} />
         </div>
 
       </div>
@@ -816,7 +821,7 @@ export default function ActionForm({ onAdd, products: _products, onClose, editAc
             fontFamily: 'Sora, sans-serif',
           }}
         >
-          Annuler
+          {t('modal_annuler')}
         </button>
         <button
           type="submit"
@@ -832,7 +837,7 @@ export default function ActionForm({ onAdd, products: _products, onClose, editAc
             fontFamily: 'Sora, sans-serif',
           }}
         >
-          {isEditMode ? 'Enregistrer les modifications' : rows.length > 1 ? `Enregistrer (${rows.length} actions)` : 'Enregistrer'}
+          {isEditMode ? t('modal_enregistrer_modifs') : rows.length > 1 ? `${t('modal_enregistrer')} (${rows.length})` : t('modal_enregistrer')}
         </button>
       </div>
 
