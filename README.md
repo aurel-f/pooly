@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="apps/web/public/pooly-icon.svg" alt="Pooly" width="80" height="80">
+<img src="docs/pooly-icon.svg" alt="Pooly" width="80" height="80">
 
 # Pooly
 
