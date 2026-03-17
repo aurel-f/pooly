@@ -105,6 +105,15 @@ cd apps/api && pytest
 - Couleur fixe blanc semi-transparent — cohérente clair/sombre (sidebar toujours sombre)
 - Fichiers modifiés : `apps/web/src/components/Topbar.tsx`
 
+### 2026-03-17 — i18n FR/EN complet
+- Créé `apps/web/src/i18n/translations.ts` (~200 clés FR/EN) et `useLocale.ts` (persistence localStorage, détection navigateur)
+- Contexte `LocaleContext` + hook `useT()` — sans prop drilling
+- Switcher FR/EN dans la sidebar (sous le toggle thème clair/sombre)
+- Tous les composants traduits : Topbar, DashboardPage, MesuresPage, HistoriquePage, ActionForm, LoginPage, InstallationModal, ProfileDialog
+- Dates localisées via `Intl.DateTimeFormat` (fr-FR / en-GB)
+- Fichiers créés : `apps/web/src/i18n/translations.ts`, `apps/web/src/i18n/useLocale.ts`, `apps/web/src/context/LocaleContext.tsx`
+- Fichiers modifiés : `App.tsx`, `Topbar.tsx`, `DashboardPage.tsx`, `MesuresPage.tsx`, `HistoriquePage.tsx`, `ActionForm.tsx`, `LoginPage.tsx`, `InstallationModal.tsx`, `ProfileDialog.tsx`
+
 ### 2026-03-17 — Publication GitHub v1.0.0
 - README.md remplacé par version bilingue FR/EN (ancien conservé dans `README.md.old`, ignoré par git)
 - Fichier LICENSE MIT créé (`Copyright (c) 2026 aurel-f`)
