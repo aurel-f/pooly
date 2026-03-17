@@ -105,6 +105,11 @@ cd apps/api && pytest
 - Couleur fixe blanc semi-transparent — cohérente clair/sombre (sidebar toujours sombre)
 - Fichiers modifiés : `apps/web/src/components/Topbar.tsx`
 
+### 2026-03-17 — Fix i18n — labels installation
+- Ajout `mon_spa` et `mon_installation` dans `translations.ts` (FR + EN) — `ma_piscine` existait déjà
+- Sidebar : label dynamique selon type d'installation active (`piscine` → MA PISCINE / MY POOL, `spa` → MON SPA / MY SPA, défaut → MON INSTALLATION / MY INSTALLATION)
+- Fichiers modifiés : `apps/web/src/i18n/translations.ts`, `apps/web/src/components/Topbar.tsx`
+
 ### 2026-03-17 — i18n FR/EN complet
 - Créé `apps/web/src/i18n/translations.ts` (~200 clés FR/EN) et `useLocale.ts` (persistence localStorage, détection navigateur)
 - Contexte `LocaleContext` + hook `useT()` — sans prop drilling
