@@ -64,6 +64,13 @@ cd apps/api && pytest
 
 ## Historique des modifications
 
+### 2026-03-17 — Landing page ajoutée
+- Fichier `landing/index.html` créé depuis `pooly-landing-v2.html`
+- Chemins screenshots ajustés : `docs/screenshots/` → `../docs/screenshots/`
+- Sections : hero, screenshots avec onglets, features, installation, footer
+- Liens vers https://github.com/aurel-f/pooly
+- Fichiers modifiés : `landing/index.html`
+
 ### 2026-03-17 — Screenshots + push GitHub
 - 6 screenshots intégrés dans README.md (FR + EN) : dashboard light/dark, mesures, historique, modal entretien, modal bandelette
 - Remote GitHub configuré : https://github.com/aurel-f/pooly.git
