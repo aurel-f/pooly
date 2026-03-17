@@ -201,21 +201,7 @@ Designed for owners who want full control without complexity: one Docker command
 
 ### 📸 Screenshots
 
-<div align="center">
-
-| Dashboard — Light mode | Dashboard — Dark mode |
-|---|---|
-| ![Dashboard light](docs/screenshots/dashboard-light.png) | ![Dashboard dark](docs/screenshots/dashboard-dark.png) |
-
-| Measurements | History |
-|---|---|
-| ![Measurements](docs/screenshots/mesures-light.png) | ![History](docs/screenshots/historique-light.png) |
-
-| New entry — Maintenance | New entry — AquaChek test strip |
-|---|---|
-| ![New entry](docs/screenshots/modal-entretien.png) | ![AquaChek strip](docs/screenshots/modal-bandelette.png) |
-
-</div>
+*See screenshots in the French section above.*
 
 ---
 
