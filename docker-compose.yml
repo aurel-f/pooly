@@ -56,7 +56,6 @@ services:
       dockerfile: Dockerfile
       target: production
     image: pooly-web:latest
-    container_name: pooly_web
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-8090}:80"

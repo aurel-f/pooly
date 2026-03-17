@@ -63,4 +63,36 @@ cd apps/api && pytest
 ```
 
 ## Historique des modifications
-<!-- Claude Code documente ici les changements appliqués -->
+
+### 2026-03-17 — Corrections pré-publication
+- Suppression `container_name: pooly_web` (`docker-compose.yml`) — empêchait l'isolation Docker
+- Suppression fichiers parasites : `mockup.html`, `mockup-shadcn.html`, `progress.md`, `pooly-icon.svg`, `pooly-logo.svg`, `pooly-water-*.svg` (dupliqués à la racine, originals dans `apps/web/src/assets/`)
+- Suppression `AUDIT.md`, `PRE_PUBLISH_REPORT.md`, `PUBLISH_READY.md` (contenaient IPs privées) + ajout au `.gitignore`
+- `APP_BASE_URL` branchée dans `main.py` — lue au démarrage, utilisée dans le logging debug de `forgot-password` pour construire le lien complet `{APP_BASE_URL}/#reset-password?token={token}`
+- Fichiers modifiés : `docker-compose.yml`, `apps/api/main.py`, `.gitignore`
+
+### 2026-03-17 — Check pré-publication — instance isolée pooly-test
+- Test dans `/tmp/pooly-test-run/pooly-fresh` (clone local isolé)
+- `COMPOSE_PROJECT_NAME=pooly-test` — aucun impact sur la prod
+- Build complet `--no-cache` : API (Python/pip) + Web (Node/Vite/Nginx) — ✅ sans erreur
+- Démarrage et santé des 3 services vérifiés : db healthy, api running, web healthy
+- Tests fonctionnels : frontend 200, API health 200, register 200, login+session 200, 5 tables DB, 10 seeds produits
+- Instance de test nettoyée après les tests (containers, volumes, images, dossier tmp)
+- Instance de production vérifiée intacte avant et après
+- **1 bug bloquant trouvé** : `container_name: pooly_web` hardcodé dans docker-compose.yml — empêche l'isolation Docker (à corriger)
+- 3 vulnérabilités npm high (dev deps uniquement, non incluses en prod) — non bloquantes
+- Résultat : CORRECTIONS NÉCESSAIRES (1 bloquante — container_name)
+- Rapport : `PUBLISH_READY.md` (ajouté au .gitignore)
+- Fichiers modifiés : `CLAUDE.md`, `.gitignore`
+
+### 2026-03-17 — Mention licence dans la sidebar
+- Ajout "Pooly v1.0.0 · MIT License" en bas de sidebar (après "Déconnexion")
+- IBM Plex Mono 10px, `rgba(255,255,255,0.15)`, `userSelect: none`
+- Couleur fixe blanc semi-transparent — cohérente clair/sombre (sidebar toujours sombre)
+- Fichiers modifiés : `apps/web/src/components/Topbar.tsx`
+
+### 2026-03-17 — Publication GitHub v1.0.0
+- README.md remplacé par version bilingue FR/EN (ancien conservé dans `README.md.old`, ignoré par git)
+- Fichier LICENSE MIT créé (`Copyright (c) 2026 aurel-f`)
+- `README.md.old` ajouté au `.gitignore`
+- Repo cible : https://github.com/aurel-f/pooly

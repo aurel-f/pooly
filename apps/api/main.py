@@ -192,6 +192,8 @@ app.add_exception_handler(
     lambda req, exc: JSONResponse({"detail": "Trop de tentatives, réessayez plus tard."}, status_code=429),
 )
 
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8090")
+
 _allowed_origins = os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:8090"
@@ -387,7 +389,8 @@ def forgot_password(payload: ForgotPasswordIn, request: Request, session: Sessio
         session.add(reset)
         session.commit()
         if os.getenv("DEBUG", "").lower() == "true":
-            logging.debug("[RESET LINK] token=%s", token)
+            reset_link = f"{APP_BASE_URL}/#reset-password?token={token}"
+            logging.debug("[RESET LINK] %s", reset_link)
     return {"ok": True}
 
 

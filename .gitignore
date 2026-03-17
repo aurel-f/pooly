@@ -40,3 +40,7 @@ CLAUDE.md.private
 *.db
 *.sqlite
 README.md.old
+PUBLISH_READY.md
+AUDIT.md
+PRE_PUBLISH_REPORT.md
+PUBLISH_READY.md

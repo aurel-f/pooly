@@ -222,6 +222,16 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
               Déconnexion
             </button>
           )}
+          <div style={{
+            padding: '8px 12px 12px',
+            fontSize: '10px',
+            fontFamily: "'IBM Plex Mono', monospace",
+            color: 'rgba(255,255,255,0.15)',
+            letterSpacing: '0.03em',
+            userSelect: 'none',
+          }}>
+            Pooly v1.0.0 · MIT License
+          </div>
         </div>
       </aside>
 
