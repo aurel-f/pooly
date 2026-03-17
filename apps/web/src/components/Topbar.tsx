@@ -276,7 +276,7 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
             padding: '8px 12px 12px',
             fontSize: '10px',
             fontFamily: "'IBM Plex Mono', monospace",
-            color: 'rgba(255,255,255,0.15)',
+            color: 'rgba(255,255,255,0.28)',
             letterSpacing: '0.03em',
             userSelect: 'none',
           }}>
