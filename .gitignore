@@ -1,46 +1,55 @@
-node_modules/
-**/node_modules/
-dist/
-build/
-.vite/
-.pytest_cache/
-**/__pycache__/
-*.pyc
-*.pyo
-apps/web/dist/
-apps/web/node_modules/
-apps/web/.vite/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.DS_Store
-.cache/
-
-# Variables d'environnement — ne jamais commiter
+# Environnement
 .env
 .env.local
 .env.*.local
 *.env
 **/.env
 
-# Environnements virtuels Python
+# Dépendances
+**/node_modules/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
 .venv/
 venv/
 
-# Backups locaux
+# Build
+dist/
+build/
+.cache/
+**/.vite/
+apps/web/dist/
+
+# Base de données locale
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests
+.pytest_cache/
+
+# Claude Code & développement interne
+CLAUDE.md
+.claude/
+*.private
+*.bak
+*.old
+.backup/
 backup-*/
 *.backup-*/
 src.backup-*/
-.backup/
-
-# Fichiers privés
-CLAUDE.md.private
-
-# SQLite (dev local)
-*.db
-*.sqlite
-README.md.old
-PUBLISH_READY.md
 AUDIT.md
 PRE_PUBLISH_REPORT.md
 PUBLISH_READY.md
+progress.md
+mockup*.html
+README.md.old
