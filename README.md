@@ -56,7 +56,21 @@ Conçu pour les propriétaires qui veulent garder le contrôle sans complexité 
 
 ### 📸 Screenshots
 
-> *Screenshots à venir — contributions bienvenues*
+<div align="center">
+
+| Journal — Mode clair | Journal — Mode sombre |
+|---|---|
+| ![Dashboard clair](docs/screenshots/dashboard-light.png) | ![Dashboard sombre](docs/screenshots/dashboard-dark.png) |
+
+| Mesures | Historique |
+|---|---|
+| ![Mesures](docs/screenshots/mesures-light.png) | ![Historique](docs/screenshots/historique-light.png) |
+
+| Nouvelle entrée — Entretien | Nouvelle entrée — Bandelette AquaChek |
+|---|---|
+| ![Modal entretien](docs/screenshots/modal-entretien.png) | ![Modal bandelette](docs/screenshots/modal-bandelette.png) |
+
+</div>
 
 ---
 
@@ -187,7 +201,21 @@ Designed for owners who want full control without complexity: one Docker command
 
 ### 📸 Screenshots
 
-> *Screenshots coming soon — contributions welcome*
+<div align="center">
+
+| Dashboard — Light mode | Dashboard — Dark mode |
+|---|---|
+| ![Dashboard light](docs/screenshots/dashboard-light.png) | ![Dashboard dark](docs/screenshots/dashboard-dark.png) |
+
+| Measurements | History |
+|---|---|
+| ![Measurements](docs/screenshots/mesures-light.png) | ![History](docs/screenshots/historique-light.png) |
+
+| New entry — Maintenance | New entry — AquaChek test strip |
+|---|---|
+| ![New entry](docs/screenshots/modal-entretien.png) | ![AquaChek strip](docs/screenshots/modal-bandelette.png) |
+
+</div>
 
 ---
 

@@ -64,6 +64,13 @@ cd apps/api && pytest
 
 ## Historique des modifications
 
+### 2026-03-17 — Screenshots + push GitHub
+- 6 screenshots intégrés dans README.md (FR + EN) : dashboard light/dark, mesures, historique, modal entretien, modal bandelette
+- Remote GitHub configuré : https://github.com/aurel-f/pooly.git
+- Credential helper configuré sur le LXC Debian (`~/.git-credentials`)
+- Push effectué sur main
+- Fichiers modifiés : `README.md`, `docs/screenshots/*`
+
 ### 2026-03-17 — Corrections pré-publication
 - Suppression `container_name: pooly_web` (`docker-compose.yml`) — empêchait l'isolation Docker
 - Suppression fichiers parasites : `mockup.html`, `mockup-shadcn.html`, `progress.md`, `pooly-icon.svg`, `pooly-logo.svg`, `pooly-water-*.svg` (dupliqués à la racine, originals dans `apps/web/src/assets/`)
