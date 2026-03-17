@@ -126,6 +126,12 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
   const { installations, active, setActive } = useInstallation()
   const { t, locale, setLocale } = useT()
 
+  const installationLabel = active?.type === 'spa'
+    ? t('mon_spa')
+    : active?.type === 'piscine'
+    ? t('ma_piscine')
+    : t('mon_installation')
+
   return (
     <>
       {/* ── Desktop sidebar ─────────────────────────────────── */}
@@ -162,7 +168,7 @@ export default function Topbar({ onAdd, onLogout, onProfile, onAddInstallation, 
               marginTop: '3px',
               letterSpacing: '0.04em',
             }}>
-              {user?.first_name ? `${t('bonjour')} ${user.first_name.toUpperCase()}` : t('ma_piscine')}
+              {user?.first_name ? `${t('bonjour')} ${user.first_name.toUpperCase()}` : installationLabel}
             </div>
           </div>
         </div>

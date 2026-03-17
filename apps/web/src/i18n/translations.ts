@@ -214,6 +214,8 @@ export const translations = {
     // Bonjour sidebar
     bonjour: 'BONJOUR',
     ma_piscine: 'MA PISCINE',
+    mon_spa: 'MON SPA',
+    mon_installation: 'MON INSTALLATION',
   },
 
   en: {
@@ -429,6 +431,8 @@ export const translations = {
     // Bonjour sidebar
     bonjour: 'HELLO',
     ma_piscine: 'MY POOL',
+    mon_spa: 'MY SPA',
+    mon_installation: 'MY INSTALLATION',
   },
 } as const
 
