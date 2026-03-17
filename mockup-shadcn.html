@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pooly — Mockup shadcn/ui</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background: #f9fafb; }
+    .font-serif { font-family: 'Fraunces', serif; }
+
+    /* shadcn-like card */
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* shadcn-like button */
+    .btn-primary {
+      background: #18181b;
+      color: white;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-outline {
+      background: white;
+      color: #18181b;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+    /* shadcn-like input */
+    .input {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      background: white;
+      color: #18181b;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .input:focus { border-color: #a1a1aa; box-shadow: 0 0 0 3px rgba(161,161,170,0.15); }
+
+    /* shadcn-like select */
+    .select {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      background: white;
+      color: #18181b;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      outline: none;
+    }
+    .select:focus { border-color: #a1a1aa; }
+
+    /* shadcn-like label */
+    .label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #18181b;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* shadcn-like badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #52525b;
+      background: white;
+    }
+
+    /* Dialog overlay */
+    .dialog-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .dialog-content {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      width: min(440px, 90vw);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+
+    /* Separator */
+    .separator { border: none; border-top: 1px solid #f3f4f6; margin: 0; }
+
+    /* Toggle */
+    .view-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: #71717a;
+    }
+    .view-btn.active {
+      background: white;
+      color: #18181b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+  <!-- Toggle vues -->
+  <div style="
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 4px;
+    display: flex;
+    gap: 2px;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  ">
+    <button class="view-btn active" onclick="showView('main')">Accueil</button>
+    <button class="view-btn" onclick="showView('login')">Login</button>
+    <button class="view-btn" onclick="showView('dialog')">Formulaire</button>
+  </div>
+
+  <!-- ============================== -->
+  <!-- VUE : ACCUEIL                  -->
+  <!-- ============================== -->
+  <div id="view-main" style="max-width: 640px; margin: 0 auto;">
+
+    <!-- Topbar -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #18181b;">
+        <div style="
+          width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+          background: conic-gradient(from 120deg, #0f6c69, #0fa38e, #49d0b0, #0f6c69);
+          box-shadow: inset 0 0 0 2px rgba(255,255,255,0.7);
+          position: relative;
+        ">
+          <div style="position:absolute;inset:8px;border-radius:5px;background:rgba(255,255,255,0.9);"></div>
+        </div>
+        Pooly
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-primary btn-sm" onclick="showView('dialog')">+ Ajouter</button>
+        <button class="btn-outline btn-sm">Déconnexion</button>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+      <div class="card" style="padding: 14px 16px;">
+        <div style="font-size: 20px; font-weight: 700; color: #18181b;">4</div>
+        <div style="font-size: 12px; color: #71717a; margin-top: 2px;">Actions ce mois</div>
+      </div>
+      <div class="card" style="padding: 14px 16px;">
+        <div style="font-size: 20px; font-weight: 700; color: #18181b;">2 j</div>
+        <div style="font-size: 12px; color: #71717a; margin-top: 2px;">Depuis la dernière</div>
+      </div>
+      <div class="card" style="padding: 14px 16px;">
+        <div style="font-size: 20px; font-weight: 700; color: #18181b;">pH 7.2</div>
+        <div style="font-size: 12px; color: #71717a; margin-top: 2px;">Dernière mesure</div>
+      </div>
+    </div>
+
+    <!-- Historique -->
+    <div>
+      <h2 class="font-serif" style="font-size: 20px; margin: 0 0 14px; color: #18181b;">Historique</h2>
+
+      <!-- Entrées -->
+      <div style="display: grid; gap: 10px;">
+
+        <div style="display: grid; grid-template-columns: 48px 1fr; gap: 10px; align-items: start;">
+          <div style="font-size: 12px; font-weight: 600; color: #71717a; padding-top: 12px;">25/02</div>
+          <div class="card" style="padding: 12px 16px;">
+            <span class="badge">Ajout de chlore</span>
+            <div style="font-size: 12px; color: #71717a; margin-top: 6px;">Chlore 60g</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 48px 1fr; gap: 10px; align-items: start;">
+          <div style="font-size: 12px; font-weight: 600; color: #71717a; padding-top: 12px;">23/02</div>
+          <div class="card" style="padding: 12px 16px;">
+            <span class="badge">Mesure pH</span>
+            <div style="font-size: 12px; color: #71717a; margin-top: 6px;">7.2 — eau claire</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 48px 1fr; gap: 10px; align-items: start;">
+          <div style="font-size: 12px; font-weight: 600; color: #71717a; padding-top: 12px;">21/02</div>
+          <div class="card" style="padding: 12px 16px;">
+            <span class="badge">Nettoyage filtre</span>
+            <div style="font-size: 12px; color: #71717a; margin-top: 6px;">—</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 48px 1fr; gap: 10px; align-items: start;">
+          <div style="font-size: 12px; font-weight: 600; color: #71717a; padding-top: 12px;">18/02</div>
+          <div class="card" style="padding: 12px 16px;">
+            <span class="badge">Réglage pH</span>
+            <div style="font-size: 12px; color: #71717a; margin-top: 6px;">pH+ 30g</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 48px 1fr; gap: 10px; align-items: start;">
+          <div style="font-size: 12px; font-weight: 600; color: #71717a; padding-top: 12px;">15/02</div>
+          <div class="card" style="padding: 12px 16px;">
+            <span class="badge">Contre-lavage</span>
+            <div style="font-size: 12px; color: #71717a; margin-top: 6px;">—</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- VUE : LOGIN                    -->
+  <!-- ============================== -->
+  <div id="view-login" style="display:none; max-width: 400px; margin: 40px auto;">
+
+    <!-- Topbar login -->
+    <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #18181b; margin-bottom: 32px;">
+      <div style="
+        width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+        background: conic-gradient(from 120deg, #0f6c69, #0fa38e, #49d0b0, #0f6c69);
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.7);
+        position: relative;
+      ">
+        <div style="position:absolute;inset:8px;border-radius:5px;background:rgba(255,255,255,0.9);"></div>
+      </div>
+      Pooly
+    </div>
+
+    <div class="card" style="padding: 24px;">
+      <h2 class="font-serif" style="font-size: 22px; margin: 0 0 6px; color: #18181b;">Connexion</h2>
+      <p style="font-size: 13px; color: #71717a; margin: 0 0 20px;">
+        Utilise ton email pour accéder à ton journal Pooly.
+      </p>
+
+      <div style="display: grid; gap: 14px;">
+        <div>
+          <label class="label">Email</label>
+          <input class="input" type="email" placeholder="toi@email.com" />
+        </div>
+        <div>
+          <label class="label">Mot de passe</label>
+          <input class="input" type="password" placeholder="••••••••" />
+        </div>
+        <button class="btn-primary" style="width: 100%; justify-content: center; padding: 10px 16px; margin-top: 4px;">
+          Se connecter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- VUE : DIALOG FORMULAIRE        -->
+  <!-- ============================== -->
+  <div id="view-dialog" style="display:none; position: relative; min-height: 500px;">
+
+    <!-- Fond simulé -->
+    <div style="
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    ">
+      <div class="dialog-content">
+        <h2 class="font-serif" style="font-size: 20px; margin: 0 0 4px; color: #18181b;">Nouvelle action</h2>
+        <hr class="separator" style="margin: 14px 0;" />
+
+        <div style="display: grid; gap: 14px;">
+
+          <div>
+            <label class="label">Date</label>
+            <input class="input" type="date" value="2026-02-25" />
+          </div>
+
+          <div>
+            <label class="label">Action</label>
+            <select class="select">
+              <option>Ajout de chlore</option>
+              <option>Mesure pH</option>
+              <option>Nettoyage filtre</option>
+              <option>Réglage pH</option>
+              <option>Contre-lavage</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label class="label">Produit</label>
+              <select class="select">
+                <option value="">Aucun</option>
+                <option>Chlore</option>
+                <option>pH+</option>
+                <option>pH-</option>
+                <option>Anti-algue</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Quantité</label>
+              <input class="input" type="number" placeholder="60" />
+            </div>
+          </div>
+
+          <div>
+            <label class="label">Unité</label>
+            <select class="select">
+              <option>g</option>
+              <option>ml</option>
+              <option>pastille</option>
+              <option>L</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="label">Notes</label>
+            <textarea class="input" rows="3" placeholder="Ex: eau claire, niveau OK" style="resize: vertical;"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;">
+            <button class="btn-outline" onclick="showView('main')">Annuler</button>
+            <button class="btn-primary" onclick="showView('main')">Enregistrer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showView(name) {
+      document.querySelectorAll('[id^="view-"]').forEach(el => el.style.display = 'none')
+      document.getElementById('view-' + name).style.display = 'block'
+      document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'))
+      const map = { main: 0, login: 1, dialog: 2 }
+      document.querySelectorAll('.view-btn')[map[name]]?.classList.add('active')
+      // Hide topbar toggle for dialog (it has its own bg)
+      document.querySelector('.view-btn').closest('div').style.display =
+        name === 'dialog' ? 'none' : 'flex'
+    }
+    // Restore toggle on dialog click
+    document.getElementById('view-dialog').addEventListener('click', function(e) {
+      if (e.target === this.firstElementChild) showView('main')
+    })
+  </script>
+</body>
+</html>

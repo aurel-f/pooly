@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 155 150" fill="none">
+  <rect x="0" y="30" width="155" height="115" rx="12" fill="#7baabb"/>
+  <rect x="0" y="30" width="155" height="115" rx="12" fill="#8fb8c8" opacity="0.5"/>
+  <ellipse cx="30" cy="72" rx="12" ry="5" fill="#6a9aaa" opacity="0.4"/>
+  <ellipse cx="90" cy="58" rx="16" ry="6" fill="#6a9aaa" opacity="0.35"/>
+  <ellipse cx="130" cy="95" rx="10" ry="4" fill="#6a9aaa" opacity="0.4"/>
+  <ellipse cx="55" cy="115" rx="14" ry="5" fill="#6a9aaa" opacity="0.3"/>
+  <ellipse cx="110" cy="108" rx="11" ry="4" fill="#6a9aaa" opacity="0.35"/>
+  <circle cx="40" cy="90" r="2" fill="#5a8a9a" opacity="0.4"/>
+  <circle cx="100" cy="70" r="1.5" fill="#5a8a9a" opacity="0.35"/>
+  <circle cx="70" cy="130" r="2" fill="#5a8a9a" opacity="0.3"/>
+  <circle cx="140" cy="60" r="1.5" fill="#5a8a9a" opacity="0.4"/>
+  <path d="M14 68 Q44 63 77 69 Q110 75 141 68" stroke="#aaccdd" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.4"/>
+  <path d="M10 90 Q40 85 73 91 Q106 97 138 90" stroke="#aaccdd" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.3"/>
+  <rect x="0" y="30" width="155" height="115" rx="12" fill="none" stroke="#5a8a9a" stroke-width="2"/>
+  <rect x="0" y="18" width="155" height="20" rx="6" fill="#f0f4f8" stroke="#dde3ec" stroke-width="1"/>
+  <line x1="130" y1="18" x2="130" y2="145" stroke="#d4dde8" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="145" y1="18" x2="145" y2="145" stroke="#d4dde8" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="130" y1="38" x2="145" y2="38" stroke="#d4dde8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="55" x2="145" y2="55" stroke="#d4dde8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="72" x2="145" y2="72" stroke="#d4dde8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="89" x2="145" y2="89" stroke="#d4dde8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="106" x2="145" y2="106" stroke="#d4dde8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="123" x2="145" y2="123" stroke="#d4dde8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="140" x2="145" y2="140" stroke="#d4dde8" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="143" cy="27" r="8" fill="#f59e0b"/>
+  <circle cx="143" cy="27" r="4" fill="white"/>
+</svg>

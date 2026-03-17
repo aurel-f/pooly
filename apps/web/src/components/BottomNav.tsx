@@ -1,0 +1,83 @@
+type Page = 'journal' | 'mesures' | 'historique'
+
+type Props = {
+  page: Page
+  onNavigate: (p: Page) => void
+  onAdd: () => void
+}
+
+export default function BottomNav({ page, onNavigate, onAdd }: Props) {
+  return (
+    <nav className="bottom-nav">
+      <button
+        className={`bn-item${page === 'journal' ? ' active' : ''}`}
+        onClick={() => onNavigate('journal')}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        Journal
+      </button>
+
+      <button
+        className={`bn-item${page === 'mesures' ? ' active' : ''}`}
+        onClick={() => onNavigate('mesures')}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+        Mesures
+      </button>
+
+      <button
+        onClick={onAdd}
+        aria-label="Nouvelle entrée"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '3px',
+          flexShrink: 0,
+          padding: '6px 10px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        <div style={{
+          width: '36px',
+          height: '36px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '10px',
+          background: 'rgba(56,189,248,0.08)',
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+            stroke="#38bdf8" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </div>
+        <span style={{
+          fontSize: '9px',
+          fontWeight: 600,
+          color: '#38bdf8',
+          fontFamily: 'Sora, sans-serif',
+        }}>Nouveau</span>
+      </button>
+
+      <button
+        className={`bn-item${page === 'historique' ? ' active' : ''}`}
+        onClick={() => onNavigate('historique')}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        Historique
+      </button>
+    </nav>
+  )
+}

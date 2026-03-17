@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 155 150" fill="none">
+  <rect x="0" y="30" width="155" height="115" rx="12" fill="#a8d8f0"/>
+  <path d="M14 68 Q44 61 77 68 Q110 75 141 68" stroke="#c8ecff" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.9"/>
+  <path d="M10 86 Q40 79 73 86 Q106 93 138 86" stroke="#c8ecff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M14 104 Q44 97 77 104 Q110 111 141 104" stroke="#c8ecff" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <line x1="38" y1="48" x2="38" y2="145" stroke="#7ec8e8" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="77" y1="48" x2="77" y2="145" stroke="#7ec8e8" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <line x1="116" y1="48" x2="116" y2="145" stroke="#7ec8e8" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+  <rect x="0" y="30" width="155" height="115" rx="12" fill="none" stroke="#7ec8e8" stroke-width="2"/>
+  <rect x="0" y="18" width="155" height="20" rx="6" fill="#f0f4f8" stroke="#dde3ec" stroke-width="1"/>
+  <line x1="130" y1="18" x2="130" y2="145" stroke="#e2e8f0" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="145" y1="18" x2="145" y2="145" stroke="#e2e8f0" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="130" y1="38" x2="145" y2="38" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="55" x2="145" y2="55" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="72" x2="145" y2="72" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="89" x2="145" y2="89" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="106" x2="145" y2="106" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="123" x2="145" y2="123" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="130" y1="140" x2="145" y2="140" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="143" cy="27" r="8" fill="#10b981"/>
+  <circle cx="143" cy="27" r="4" fill="white"/>
+</svg>
