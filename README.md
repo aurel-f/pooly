@@ -1,176 +1,282 @@
+<div align="center">
+
+<img src="apps/web/public/pooly-icon.svg" alt="Pooly" width="80" height="80">
+
 # Pooly
 
-Application de suivi d'entretien de piscine — PWA React + TypeScript, backend FastAPI, PostgreSQL.
+**🇫🇷 Journal d'entretien pour piscines et spas — self-hosted**
+**🇬🇧 Pool & spa maintenance tracker — self-hosted**
 
-![Stack](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-blue)
-![Stack](https://img.shields.io/badge/Backend-FastAPI-green)
-![Stack](https://img.shields.io/badge/DB-PostgreSQL-blue)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+[![Version](https://img.shields.io/badge/version-1.0.0-38bdf8?style=flat-square)](https://github.com/aurel-f/pooly/releases)
+[![Licence](https://img.shields.io/badge/licence-MIT-10b981?style=flat-square)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-compose-0ea5e9?style=flat-square&logo=docker&logoColor=white)](docker-compose.yml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 
-## Fonctionnalités
+</div>
 
-- **Journal d'entretien** — enregistrer traitements, mesures et entretiens
-- **Tableau de bord** — KPIs (pH, chlore, TAC, température), état de la piscine
-- **Historique** — timeline groupée par mois, filtres, recherche
-- **Graphiques** — évolution pH et chlore sur 1/3/6 mois
-- **Auth complète** — inscription, connexion, mot de passe oublié/réinitialisation
-- **Export / Import JSON** — sauvegarde et restauration des données
-- **Multi-utilisateurs** — chaque utilisateur voit uniquement ses propres données
+---
 
-## Déploiement rapide
+## 🇫🇷 Français
 
-### Prérequis
+### Table des matières
+- [Présentation](#-présentation)
+- [Fonctionnalités](#-fonctionnalités)
+- [Screenshots](#-screenshots)
+- [Installation rapide](#-installation-rapide)
+- [Configuration](#-configuration)
+- [Stack technique](#-stack-technique)
+- [Contribuer](#-contribuer)
+- [Licence](#-licence)
 
-- [Docker](https://docs.docker.com/get-docker/) et [Docker Compose](https://docs.docker.com/compose/) installés
+---
 
-### 1. Cloner le dépôt
+### 🌊 Présentation
+
+Pooly est une application web **self-hosted** pour suivre l'entretien de vos piscines et spas. Enregistrez vos mesures, traitements et entretiens depuis un dashboard clair — vos données restent chez vous.
+
+Conçu pour les propriétaires qui veulent garder le contrôle sans complexité : une commande Docker et c'est lancé.
+
+---
+
+### ✨ Fonctionnalités
+
+- **Dashboard complet** — KPIs, paramètres en temps réel, indicateur visuel de l'état de l'eau
+- **Saisie par bandelette AquaChek** — nuancier interactif pour pH, TAC, Brome et Dureté
+- **Saisie par appareil numérique** — inputs décimaux avec validation des plages
+- **Multi-installation** — gérez plusieurs piscines et spas avec des plages de référence adaptées
+- **Piscine & Spa** — brome ou chlore, plages idéales différenciées
+- **Historique complet** — timeline groupée par mois, filtres par type, recherche full-text
+- **Page Mesures** — suivi de l'évolution des paramètres dans le temps
+- **Mode sombre** — thème clair, sombre ou automatique (préférence système)
+- **PWA** — installable sur mobile, bottom navigation, bottom sheet modal
+- **Self-hosted & privé** — aucun cloud tiers, aucun tracking, vos données restent chez vous
+
+---
+
+### 📸 Screenshots
+
+> *Screenshots à venir — contributions bienvenues*
+
+---
+
+### 🚀 Installation rapide
+
+**Prérequis** : Docker et Docker Compose installés sur votre machine.
 
 ```bash
-git clone https://github.com/votre-username/pooly.git
+# 1. Clonez le dépôt
+git clone https://github.com/aurel-f/pooly.git
 cd pooly
-```
 
-### 2. Configurer l'environnement
-
-```bash
+# 2. Configurez l'environnement
 cp .env.example .env
-```
+nano .env  # Définissez vos mots de passe et secrets
 
-Éditer `.env` et renseigner au minimum :
-
-```env
-POSTGRES_PASSWORD=un-mot-de-passe-fort
-SESSION_SECRET=une-chaine-aleatoire-longue   # openssl rand -hex 32
-```
-
-Les autres variables ont des valeurs par défaut. Le compte admin (`ADMIN_EMAIL` / `ADMIN_PASSWORD`) est optionnel — vous pouvez vous inscrire directement depuis l'interface.
-
-### 3. Lancer
-
-```bash
-docker compose up -d
-```
-
-L'application est disponible sur **http://localhost:8090** (ou le port défini par `WEB_PORT`).
-
-### 4. Premier démarrage
-
-Au premier lancement, Docker va :
-1. Télécharger PostgreSQL 16
-2. Construire l'image API (FastAPI)
-3. Construire l'image frontend (React + Nginx)
-4. Créer les tables et injecter les produits de base (chlore, pH+, pH-, etc.)
-
-Comptez 2–3 minutes au premier build.
-
-## Variables d'environnement
-
-| Variable | Défaut | Description |
-|----------|--------|-------------|
-| `POSTGRES_PASSWORD` | — | **Requis.** Mot de passe PostgreSQL |
-| `POSTGRES_USER` | `pooly` | Utilisateur PostgreSQL |
-| `POSTGRES_DB` | `pooly` | Nom de la base |
-| `SESSION_SECRET` | — | **Requis.** Clé secrète pour les sessions |
-| `ADMIN_EMAIL` | _(vide)_ | Email du compte admin créé au démarrage |
-| `ADMIN_PASSWORD` | _(vide)_ | Mot de passe du compte admin |
-| `WEB_PORT` | `8090` | Port exposé pour le frontend |
-
-## Architecture
-
-```
-┌─────────────────────────────────┐
-│  web (Nginx + React SPA)        │  :8090
-│  /api/* ──proxy──►              │
-└────────────┬────────────────────┘
-             │
-┌────────────▼────────────────────┐
-│  api (FastAPI)                  │  :8003 (interne)
-│  Auth, Actions, Products        │
-└────────────┬────────────────────┘
-             │
-┌────────────▼────────────────────┐
-│  db (PostgreSQL 16)             │  :5432 (interne)
-│  Volume : postgres_data         │
-└─────────────────────────────────┘
-```
-
-## Structure du projet
-
-```
-pooly/
-├── apps/
-│   ├── api/          # Backend FastAPI
-│   │   ├── main.py
-│   │   ├── models.py
-│   │   ├── database.py
-│   │   ├── seeds.py
-│   │   ├── requirements.txt
-│   │   ├── Dockerfile
-│   │   └── tests/
-│   └── web/          # Frontend React + Vite
-│       ├── src/
-│       ├── nginx/
-│       ├── Dockerfile
-│       └── package.json
-├── docs/             # Specs et décisions d'architecture
-├── docker-compose.yml
-├── .env.example
-└── README.md
-```
-
-## Développement local
-
-### Frontend
-
-```bash
-cd apps/web
-npm install
-npm run dev        # http://localhost:5173
-npm run test       # Vitest
-```
-
-### Backend
-
-```bash
-cd apps/api
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Avec SQLite (pas besoin de PostgreSQL)
-DATABASE_URL=sqlite:///./pooly.db SESSION_SECRET=dev uvicorn main:app --reload
-```
-
-## Commandes utiles
-
-```bash
-# Démarrer
+# 3. Lancez Pooly
 docker compose up -d
 
-# Voir les logs
-docker compose logs -f
-
-# Rebuild après modification du code
-docker compose up -d --build
-
-# Arrêter et supprimer les containers (les données sont conservées)
-docker compose down
-
-# Supprimer aussi les données (reset complet)
-docker compose down -v
+# 4. Ouvrez dans votre navigateur
+open http://localhost:8090
 ```
 
-## Stack technique
+L'application est accessible sur `http://localhost:8090`. Créez votre compte à la première connexion.
+
+---
+
+### ⚙️ Configuration
+
+Copiez `.env.example` en `.env` et ajustez les valeurs :
+
+| Variable | Description | Défaut |
+|---|---|---|
+| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL | — |
+| `SESSION_SECRET` | Clé secrète pour les sessions | — |
+| `APP_BASE_URL` | URL publique de l'app | `http://localhost:8090` |
+| `ALLOWED_ORIGINS` | Origines CORS autorisées | `http://localhost:8090` |
+| `DEBUG` | Mode debug (logs reset links) | `false` |
+
+> ⚠️ **Ne jamais committer votre fichier `.env`**. Il est déjà dans le `.gitignore`.
+
+---
+
+### 🛠 Stack technique
 
 | Couche | Technologie |
-|--------|-------------|
-| Frontend | React 19, TypeScript 5.9, Vite 7, Tailwind CSS 4, shadcn/ui |
-| Backend | FastAPI, SQLModel, Pydantic, passlib |
+|---|---|
+| Frontend | React 19, Vite, Tailwind CSS |
+| Backend | FastAPI, SQLModel, Python 3.12 |
 | Base de données | PostgreSQL 16 |
-| Auth | Session cookie (itsdangerous), pbkdf2_sha256 |
-| Déploiement | Docker Compose, Nginx 1.27, Python 3.13 |
-| Tests | Vitest 4, @testing-library/react, pytest |
+| Auth | Sessions cookie (httpOnly, same_site=strict) |
+| Déploiement | Docker Compose |
+| Typographie | Sora + IBM Plex Mono |
 
-## Licence
+---
 
-MIT
+### 🤝 Contribuer
+
+Les contributions sont les bienvenues ! Voici comment participer :
+
+```bash
+# Forkez le repo, puis :
+git clone https://github.com/aurel-f/pooly.git
+cd pooly
+git checkout -b feature/ma-fonctionnalite
+
+# Faites vos modifications, puis :
+git commit -m "feat: description de la fonctionnalité"
+git push origin feature/ma-fonctionnalite
+# Ouvrez une Pull Request
+```
+
+**Types de contributions appréciées :**
+- 🐛 Corrections de bugs
+- ✨ Nouvelles fonctionnalités
+- 🌍 Traductions
+- 📸 Screenshots et démos
+- 📖 Améliorations de la documentation
+
+Consultez les [issues ouvertes](https://github.com/aurel-f/pooly/issues) pour voir ce sur quoi travailler.
+
+---
+
+### 📄 Licence
+
+Distribué sous licence **MIT**. Voir [LICENSE](LICENSE) pour plus d'informations.
+
+---
+
+---
+
+## 🇬🇧 English
+
+### Table of contents
+- [Overview](#-overview)
+- [Features](#-features)
+- [Screenshots](#-screenshots-1)
+- [Quick start](#-quick-start)
+- [Configuration](#-configuration-1)
+- [Tech stack](#-tech-stack)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+### 🌊 Overview
+
+Pooly is a **self-hosted** web application to track the maintenance of your pools and spas. Log your water measurements, treatments and maintenance tasks from a clean dashboard — your data stays on your own server.
+
+Designed for owners who want full control without complexity: one Docker command and you're up and running.
+
+---
+
+### ✨ Features
+
+- **Full dashboard** — KPIs, real-time water parameters, visual water quality indicator
+- **AquaChek test strip input** — interactive color chart for pH, Alkalinity, Bromine and Hardness
+- **Digital device input** — decimal inputs with range validation
+- **Multi-installation** — manage multiple pools and spas with adapted reference ranges
+- **Pool & Spa** — bromine or chlorine, differentiated ideal ranges
+- **Full history** — monthly timeline, type filters, full-text search
+- **Measurements page** — track parameter trends over time
+- **Dark mode** — light, dark or automatic theme (system preference)
+- **PWA** — installable on mobile, bottom navigation, bottom sheet modal
+- **Self-hosted & private** — no third-party cloud, no tracking, your data stays yours
+
+---
+
+### 📸 Screenshots
+
+> *Screenshots coming soon — contributions welcome*
+
+---
+
+### 🚀 Quick start
+
+**Requirements**: Docker and Docker Compose installed on your machine.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/aurel-f/pooly.git
+cd pooly
+
+# 2. Set up environment
+cp .env.example .env
+nano .env  # Set your passwords and secrets
+
+# 3. Start Pooly
+docker compose up -d
+
+# 4. Open in your browser
+open http://localhost:8090
+```
+
+The app is available at `http://localhost:8090`. Create your account on first login.
+
+---
+
+### ⚙️ Configuration
+
+Copy `.env.example` to `.env` and adjust the values:
+
+| Variable | Description | Default |
+|---|---|---|
+| `POSTGRES_PASSWORD` | PostgreSQL password | — |
+| `SESSION_SECRET` | Session secret key | — |
+| `APP_BASE_URL` | Public app URL | `http://localhost:8090` |
+| `ALLOWED_ORIGINS` | Allowed CORS origins | `http://localhost:8090` |
+| `DEBUG` | Debug mode (logs reset links) | `false` |
+
+> ⚠️ **Never commit your `.env` file**. It is already in `.gitignore`.
+
+---
+
+### 🛠 Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, Vite, Tailwind CSS |
+| Backend | FastAPI, SQLModel, Python 3.12 |
+| Database | PostgreSQL 16 |
+| Auth | Cookie sessions (httpOnly, same_site=strict) |
+| Deployment | Docker Compose |
+| Typography | Sora + IBM Plex Mono |
+
+---
+
+### 🤝 Contributing
+
+Contributions are welcome! Here's how to get involved:
+
+```bash
+# Fork the repo, then:
+git clone https://github.com/aurel-f/pooly.git
+cd pooly
+git checkout -b feature/my-feature
+
+# Make your changes, then:
+git commit -m "feat: describe the feature"
+git push origin feature/my-feature
+# Open a Pull Request
+```
+
+**Appreciated contribution types:**
+- 🐛 Bug fixes
+- ✨ New features
+- 🌍 Translations
+- 📸 Screenshots and demos
+- 📖 Documentation improvements
+
+Check the [open issues](https://github.com/aurel-f/pooly/issues) to find something to work on.
+
+---
+
+### 📄 License
+
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
+
+---
+
+<div align="center">
+  <sub>Made with ♥ · Self-hosted · Open source</sub>
+</div>

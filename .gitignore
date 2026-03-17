@@ -39,3 +39,4 @@ CLAUDE.md.private
 # SQLite (dev local)
 *.db
 *.sqlite
+README.md.old
