@@ -17,6 +17,7 @@ import {
   getPhStatus,
   getChloreStatus,
   getBromeStatus,
+  getSelStatus,
   getTacStatus,
   getTempStatus,
   getPhHistory,
@@ -26,7 +27,9 @@ import {
   getNextMeasureInDays,
   getTreatmentsThisMonth,
   getTodoItems,
+  translateLabel,
 } from '../utils'
+import { ACTION_TYPE_LABELS } from './ActionForm'
 
 function formatDateLong(d: Date, locale: Locale): string {
   return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-GB', {
@@ -74,7 +77,7 @@ export default function DashboardPage({ actions, products: _products, onEdit, on
   const daysSince = useMemo(() => daysSinceLastAction(actions), [actions])
   const nextMeasure = useMemo(() => getNextMeasureInDays(actions), [actions])
   const treatments = useMemo(() => getTreatmentsThisMonth(actions, yearMonth), [actions, yearMonth])
-  const todoItems = useMemo(() => getTodoItems(actions, params), [actions, params])
+  const todoItems = useMemo(() => getTodoItems(actions, params, t), [actions, params, t])
 
   function lastActionLabel(): string {
     if (actions.length === 0) return '—'
@@ -184,7 +187,7 @@ export default function DashboardPage({ actions, products: _products, onEdit, on
             {lastActionLabel()}
           </div>
           <div style={{ fontFamily: '"Sora", sans-serif', fontSize: 11, color: 'var(--text-muted)' }}>
-            {lastActionType() || t('kpi_aucune_action')}
+            {lastActionType() ? translateLabel(t, ACTION_TYPE_LABELS, lastActionType()) : t('kpi_aucune_action')}
           </div>
         </div>
 
@@ -228,15 +231,32 @@ export default function DashboardPage({ actions, products: _products, onEdit, on
           <ParamBlock
             label={t('param_brome')}
             value={params.brome !== null ? params.brome.toFixed(1) : '—'}
-            unit="mg/L"
+            unit={active?.conc_unit ?? 'mg/L'}
             status={params.brome !== null ? getBromeStatus(params.brome, ranges ?? undefined) : null}
             showDivider={true}
           />
+        ) : sanitizer === 'sel' ? (
+          <>
+            <ParamBlock
+              label={t('param_sel')}
+              value={params.salt !== null ? params.salt.toFixed(0) : '—'}
+              unit={active?.salt_unit ?? 'ppm'}
+              status={params.salt !== null ? getSelStatus(params.salt, ranges ?? undefined) : null}
+              showDivider={true}
+            />
+            <ParamBlock
+              label={t('param_chlore')}
+              value={params.chlore !== null ? params.chlore.toFixed(1) : '—'}
+              unit={active?.conc_unit ?? 'mg/L'}
+              status={params.chlore !== null ? getChloreStatus(params.chlore, ranges ?? undefined) : null}
+              showDivider={true}
+            />
+          </>
         ) : (
           <ParamBlock
             label={t('param_chlore')}
             value={params.chlore !== null ? params.chlore.toFixed(1) : '—'}
-            unit="mg/L"
+            unit={active?.conc_unit ?? 'mg/L'}
             status={params.chlore !== null ? getChloreStatus(params.chlore, ranges ?? undefined) : null}
             showDivider={true}
           />
@@ -244,7 +264,7 @@ export default function DashboardPage({ actions, products: _products, onEdit, on
         <ParamBlock
           label={t('param_tac')}
           value={params.tac !== null ? String(Math.round(params.tac)) : '—'}
-          unit="mg/L"
+          unit={active?.conc_unit ?? 'mg/L'}
           status={params.tac !== null ? getTacStatus(params.tac, ranges ?? undefined) : null}
           showDivider={true}
         />
@@ -257,7 +277,7 @@ export default function DashboardPage({ actions, products: _products, onEdit, on
               {params.temp !== null ? params.temp.toFixed(1) : '—'}
             </span>
             {params.temp !== null && (
-              <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 11, color: 'var(--text-muted)' }}>°C</span>
+              <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 11, color: 'var(--text-muted)' }}>°{active?.temp_unit ?? 'C'}</span>
             )}
           </div>
           {params.temp !== null && (
@@ -335,14 +355,14 @@ export default function DashboardPage({ actions, products: _products, onEdit, on
                         <div style={{ display: 'flex', gap: 2, opacity: hoveredRowId === action.id ? 1 : 0, transition: 'opacity 0.15s' }}>
                           <button
                             onClick={() => onEdit(action)}
-                            title="Modifier"
+                            title={t('modal_modifier')}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
                           >
                             <Pencil size={13} />
                           </button>
                           <button
                             onClick={() => onDelete(action)}
-                            title="Supprimer"
+                            title={t('modal_supprimer')}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
                           >
                             <Trash2 size={13} />
@@ -544,6 +564,7 @@ function StatusBadge({ status }: { status: ParamStatus }) {
 }
 
 function ActionTypeBadge({ actionType }: { actionType: string }) {
+  const { t } = useT()
   let color = 'var(--text-muted)', bg = 'var(--bg-surface-2)'
   if (actionType === 'Mesure' || actionType === 'Mesure de pH') {
     color = 'var(--badge-orange-text)'; bg = 'var(--badge-orange-bg)'
@@ -563,12 +584,13 @@ function ActionTypeBadge({ actionType }: { actionType: string }) {
       padding: '2px 6px', borderRadius: 4,
       display: 'inline-block', whiteSpace: 'nowrap',
     }}>
-      {actionType}
+      {translateLabel(t, ACTION_TYPE_LABELS, actionType)}
     </span>
   )
 }
 
 function ActionParamPills({ action }: { action: Action }) {
+  const { active } = useInstallation()
   const p = extractMeasuredParams([action])
   const pills: Array<{ label: string; color: string; bg: string }> = []
   const styleMap = {
@@ -582,15 +604,15 @@ function ActionParamPills({ action }: { action: Action }) {
   }
   if (p.chlore !== null) {
     const s = getChloreStatus(p.chlore)
-    pills.push({ label: `Cl ${p.chlore.toFixed(1)} mg/L`, ...styleMap[s] })
+    pills.push({ label: `Cl ${p.chlore.toFixed(1)} ${active?.conc_unit ?? 'mg/L'}`, ...styleMap[s] })
   }
   if (p.tac !== null) {
     const s = getTacStatus(p.tac)
-    pills.push({ label: `TAC ${Math.round(p.tac)} mg/L`, ...styleMap[s] })
+    pills.push({ label: `TAC ${Math.round(p.tac)} ${active?.conc_unit ?? 'mg/L'}`, ...styleMap[s] })
   }
   if (p.temp !== null) {
     const s = getTempStatus(p.temp)
-    pills.push({ label: `T° ${p.temp.toFixed(1)} °C`, ...styleMap[s] })
+    pills.push({ label: `T° ${p.temp.toFixed(1)} °${active?.temp_unit ?? 'C'}`, ...styleMap[s] })
   }
   if (pills.length === 0) {
     return <span style={{ color: 'var(--text-muted)', fontFamily: '"IBM Plex Mono", monospace', fontSize: 10 }}>—</span>

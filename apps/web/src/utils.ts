@@ -1,9 +1,13 @@
-import type { Action, InstallationWaterParams } from './types'
+import type { Action, Installation, InstallationWaterParams } from './types'
+import { celsiusToFahrenheit, ppmToGramsPerLiter, ppmToGermanDegrees, ppmToFrenchDegrees, convertRange } from './units'
+import type { TranslationKey } from './i18n/translations'
 
 // ── Water status ──────────────────────────────────────────────────────────────
 
 export type WaterStatus = 'clear' | 'cloudy' | 'green'
 
+// Sel, stabilisant (CYA), CC and dureté are tracked/displayed but deliberately
+// excluded from the clear/cloudy/green heuristic below (same precedent as durete).
 export type WaterParams = {
   ph: number | null
   chlore: number | null
@@ -20,27 +24,54 @@ export type DynamicRanges = {
   brome?: { ideal: [number, number]; acceptable: [number, number] }
   tac?: { ideal: [number, number]; acceptable: [number, number] }
   temp?: { ideal: [number, number]; acceptable: [number, number] }
+  sel?: { ideal: [number, number]; acceptable: [number, number] }
+  stabilisant?: { ideal: [number, number]; acceptable: [number, number] }
+  cc?: { ideal: [number, number]; acceptable: [number, number] }
+  durete?: { ideal: [number, number]; acceptable: [number, number] }
 }
 
-/** Convert API InstallationWaterParams to DynamicRanges (cl→chlore, br→brome). */
-export function installationParamsToRanges(params: InstallationWaterParams): DynamicRanges {
+/**
+ * Convert API InstallationWaterParams to DynamicRanges (cl→chlore, br→brome, salt→sel, cya→stabilisant).
+ * When an installation is provided, temp/sel/durete ranges are converted to the installation's
+ * chosen unit ("store as entered" model — chlore/brome/tac/cc are display-label-only, no math).
+ * durete falls back to PARAM_RANGES.durete only for combos that don't return one from the backend.
+ */
+export function installationParamsToRanges(params: InstallationWaterParams, installation?: Installation): DynamicRanges {
+  const temp = installation?.temp_unit === 'F' ? convertRange(params.temp, celsiusToFahrenheit) : params.temp
+  const sel = installation?.salt_unit === 'g/L' && params.salt ? convertRange(params.salt, ppmToGramsPerLiter) : params.salt
+
+  const dureteBase = params.durete ?? PARAM_RANGES.durete
+  const dureteUnit = installation?.durete_unit ?? 'ppm'
+  const durete = dureteUnit === '°dH'
+    ? convertRange(dureteBase, ppmToGermanDegrees)
+    : dureteUnit === '°f'
+      ? convertRange(dureteBase, ppmToFrenchDegrees)
+      : dureteBase
+
   return {
     ph: params.ph,
     tac: params.tac,
-    temp: params.temp,
+    temp,
     chlore: params.cl,
     brome: params.br,
+    sel,
+    stabilisant: params.cya,
+    cc: params.cc,
+    durete,
   }
 }
 
 /** Centralised reference ranges. Use these everywhere — never duplicate. */
 export const PARAM_RANGES = {
-  ph:     { ideal: [7.0, 7.6] as [number, number], acceptable: [6.8, 7.8] as [number, number] },
-  chlore: { ideal: [0.5, 3.0] as [number, number], acceptable: [0.3, 4.0] as [number, number] },
-  tac:    { ideal: [80, 180]  as [number, number], acceptable: [60, 200]  as [number, number] },
-  temp:   { ideal: [24, 28]   as [number, number], acceptable: [15, 35]   as [number, number] },
-  brome:  { ideal: [2, 5]     as [number, number], acceptable: [1, 10]    as [number, number] },
-  durete: { ideal: [100, 500] as [number, number], acceptable: [50, 1000] as [number, number] },
+  ph:          { ideal: [7.0, 7.6]     as [number, number], acceptable: [6.8, 7.8]     as [number, number] },
+  chlore:      { ideal: [0.5, 3.0]     as [number, number], acceptable: [0.3, 4.0]     as [number, number] },
+  tac:         { ideal: [80, 180]      as [number, number], acceptable: [60, 200]      as [number, number] },
+  temp:        { ideal: [24, 28]       as [number, number], acceptable: [15, 35]       as [number, number] },
+  brome:       { ideal: [2, 5]         as [number, number], acceptable: [1, 10]        as [number, number] },
+  durete:      { ideal: [100, 500]     as [number, number], acceptable: [50, 1000]     as [number, number] },
+  sel:         { ideal: [2700, 3400]   as [number, number], acceptable: [2500, 4500]   as [number, number] },
+  stabilisant: { ideal: [60, 80]       as [number, number], acceptable: [30, 100]      as [number, number] },
+  cc:          { ideal: [0, 0.2]       as [number, number], acceptable: [0, 0.5]       as [number, number] },
 }
 
 /**
@@ -56,6 +87,23 @@ export const BANDELETTE_OK_RANGES = {
 
 /** Action types that carry water-quality measurements. */
 const MEASURE_ACTION_TYPES = ['Mesure de pH', 'Mesure']
+
+// ── Measurement-parsing regexes ─────────────────────────────────────────────
+// Single source of truth for parsing the `key: value` measurement fields that
+// toPayload (ActionForm.tsx) writes into `notes`. (\d+(?:\.\d+)?) — not [\d.]+ —
+// so a value immediately followed by a sentence period (as toPayload always
+// produces, e.g. "chlore: 1.5. TAC: ...") captures cleanly without swallowing
+// the trailing dot. RX_TEMP requires a literal ° for its shorthand branch (not
+// an optional one) so it can't hijack the "t" in "stabilisant: 65".
+const NUM = String.raw`(\d+(?:\.\d+)?)`
+export const RX_CHLORE = new RegExp(String.raw`chlore?\s*(?:libre)?\s*:?\s*${NUM}`, 'i')
+export const RX_TAC = new RegExp(String.raw`TAC\s*:?\s*${NUM}`, 'i')
+export const RX_DURETE = new RegExp(String.raw`dur[eé]t[eé]\s*(?:totale?)?\s*:?\s*${NUM}`, 'i')
+export const RX_BROME = new RegExp(String.raw`brome\s*(?:total)?\s*:?\s*${NUM}`, 'i')
+export const RX_SEL = new RegExp(String.raw`(?:sel|salt)\s*:?\s*${NUM}`, 'i')
+export const RX_STABILISANT = new RegExp(String.raw`(?:stabilisant|acide cyanurique|cya)\s*:?\s*${NUM}`, 'i')
+export const RX_CC = new RegExp(String.raw`combin[ée]?\s*:?\s*${NUM}`, 'i')
+export const RX_TEMP = new RegExp(String.raw`(?:temp[eé]rature?|\bT°)\s*:?\s*${NUM}`, 'i')
 
 /** Extracts the most recent pH, chlore libre and TAC values from actions. */
 export function extractWaterParams(actions: Action[]): WaterParams {
@@ -77,12 +125,12 @@ export function extractWaterParams(actions: Action[]): WaterParams {
     }
     // Chlore libre: parse from notes (e.g. "chlore libre: 1.5")
     if (chlore === null && action.notes) {
-      const m = action.notes.match(/chlore?\s*(?:libre)?\s*:?\s*([\d.]+)/i)
+      const m = action.notes.match(RX_CHLORE)
       if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) chlore = v }
     }
     // TAC: parse from notes (e.g. "TAC: 120")
     if (tac === null && action.notes) {
-      const m = action.notes.match(/TAC\s*:?\s*([\d.]+)/i)
+      const m = action.notes.match(RX_TAC)
       if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) tac = v }
     }
     if (ph !== null && chlore !== null && tac !== null) break
@@ -107,17 +155,20 @@ export function getWaterStatus(params: WaterParams, ranges?: DynamicRanges): { s
   const rbr    = ranges?.brome  ?? PARAM_RANGES.brome
   const rtac   = ranges?.tac    ?? PARAM_RANGES.tac
 
-  // Green — most severe, checked first
+  // Green — most severe, checked first. TAC/alkalinity is deliberately excluded here:
+  // an out-of-range TAC doesn't cause visually green/algae water (it's a balance
+  // parameter, not a sanitizer), so it can only push status down to 'cloudy', never
+  // trigger this tier. It's still surfaced via its own status pill on the Dashboard.
   if (
     (ph     !== null && !inRange(ph,     rph.acceptable))  ||
     (chlore !== null && !inRange(chlore, rcl.acceptable))  ||
-    (brome  !== null && !inRange(brome,  rbr.acceptable))  ||
-    (tac    !== null && !inRange(tac,    rtac.acceptable))
+    (brome  !== null && !inRange(brome,  rbr.acceptable))
   ) {
     return { status: 'green', hasData: true }
   }
 
-  // Cloudy
+  // Cloudy — TAC outside its ideal band lands here (this also covers a TAC outside its
+  // acceptable band, since acceptable is always a superset of ideal).
   if (
     (ph     !== null && !inRange(ph,     rph.ideal))  ||
     (chlore !== null && !inRange(chlore, rcl.ideal))  ||
@@ -128,6 +179,12 @@ export function getWaterStatus(params: WaterParams, ranges?: DynamicRanges): { s
   }
 
   return { status: 'clear', hasData: true }
+}
+
+/** Renders a DB-stored/matched raw string (action type, product name, quick tag) as a
+ * translated label, without ever touching the raw value used for storage/matching. */
+export function translateLabel(t: (key: TranslationKey) => string, map: Record<string, TranslationKey>, raw: string): string {
+  return map[raw] ? t(map[raw]) : raw
 }
 
 export function getActionsThisMonth(actions: Action[], yearMonth: string): Action[] {
@@ -162,6 +219,9 @@ export type MeasuredParams = {
   temp: number | null
   brome: number | null
   durete: number | null
+  salt: number | null
+  stabilisant: number | null
+  cc: number | null
   date: string | null
 }
 
@@ -191,6 +251,9 @@ export function extractMeasuredParams(actions: Action[]): MeasuredParams {
   let temp: number | null = null
   let brome: number | null = null
   let durete: number | null = null
+  let salt: number | null = null
+  let stabilisant: number | null = null
+  let cc: number | null = null
   let date: string | null = null
 
   for (const action of sorted) {
@@ -208,39 +271,55 @@ export function extractMeasuredParams(actions: Action[]): MeasuredParams {
     }
     // Chlore libre
     if (chlore === null && action.notes) {
-      const m = action.notes.match(/chlore?\s*(?:libre)?\s*:?\s*([\d.]+)/i)
+      const m = action.notes.match(RX_CHLORE)
       if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) { chlore = v; contributed = true } }
     }
     // TAC
     if (tac === null && action.notes) {
-      const m = action.notes.match(/TAC\s*:?\s*([\d.]+)/i)
+      const m = action.notes.match(RX_TAC)
       if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) { tac = v; contributed = true } }
     }
     // Température
     if (temp === null && action.notes) {
-      const m = action.notes.match(/temp[eé]rature?\s*:?\s*([\d.]+)|T°?\s*:?\s*([\d.]+)/i)
-      if (m) {
-        const v = parseFloat(m[1] ?? m[2])
-        if (!isNaN(v)) { temp = v; contributed = true }
-      }
+      const m = action.notes.match(RX_TEMP)
+      if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) { temp = v; contributed = true } }
     }
     // Brome total
     if (brome === null && action.notes) {
-      const m = action.notes.match(/brome\s*(?:total)?\s*:?\s*([\d.]+)/i)
+      const m = action.notes.match(RX_BROME)
       if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) { brome = v; contributed = true } }
     }
     // Dureté totale
     if (durete === null && action.notes) {
-      const m = action.notes.match(/dur[eé]t[eé]\s*(?:totale?)?\s*:?\s*([\d.]+)/i)
+      const m = action.notes.match(RX_DURETE)
       if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) { durete = v; contributed = true } }
+    }
+    // Sel (ppm)
+    if (salt === null && action.notes) {
+      const m = action.notes.match(RX_SEL)
+      if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) { salt = v; contributed = true } }
+    }
+    // Stabilisant / acide cyanurique (CYA)
+    if (stabilisant === null && action.notes) {
+      const m = action.notes.match(RX_STABILISANT)
+      if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) { stabilisant = v; contributed = true } }
+    }
+    // Chlore combiné (CC) — deliberately does not contain "chlore" as a substring,
+    // so it never interacts with the free-chlore regex above.
+    if (cc === null && action.notes) {
+      const m = action.notes.match(RX_CC)
+      if (m) { const v = parseFloat(m[1]); if (!isNaN(v)) { cc = v; contributed = true } }
     }
 
     if (contributed && date === null) date = action.date
 
-    if (ph !== null && chlore !== null && tac !== null && temp !== null && brome !== null && durete !== null) break
+    if (
+      ph !== null && chlore !== null && tac !== null && temp !== null &&
+      brome !== null && durete !== null && salt !== null && stabilisant !== null && cc !== null
+    ) break
   }
 
-  return { ph, chlore, tac, temp, brome, durete, date }
+  return { ph, chlore, tac, temp, brome, durete, salt, stabilisant, cc, date }
 }
 
 function inRange(v: number, [min, max]: [number, number]): boolean {
@@ -288,9 +367,34 @@ export function getBromeStatus(v: number, ranges?: DynamicRanges): ParamStatus {
 }
 
 /** Dureté totale: normal=100–500 ppm, warn=50–1000 ppm, bad=outside */
-export function getDureteStatus(v: number): ParamStatus {
-  if (inRange(v, PARAM_RANGES.durete.ideal)) return 'normal'
-  if (inRange(v, PARAM_RANGES.durete.acceptable)) return 'warn'
+export function getDureteStatus(v: number, ranges?: DynamicRanges): ParamStatus {
+  const r = ranges?.durete ?? PARAM_RANGES.durete
+  if (inRange(v, r.ideal)) return 'normal'
+  if (inRange(v, r.acceptable)) return 'warn'
+  return 'bad'
+}
+
+/** Sel: normal=2700–3400 ppm, warn=2500–4500 ppm, bad=outside */
+export function getSelStatus(v: number, ranges?: DynamicRanges): ParamStatus {
+  const r = ranges?.sel ?? PARAM_RANGES.sel
+  if (inRange(v, r.ideal)) return 'normal'
+  if (inRange(v, r.acceptable)) return 'warn'
+  return 'bad'
+}
+
+/** Stabilisant (CYA): normal=60–80 ppm, warn=30–100 ppm, bad=outside */
+export function getStabilisantStatus(v: number, ranges?: DynamicRanges): ParamStatus {
+  const r = ranges?.stabilisant ?? PARAM_RANGES.stabilisant
+  if (inRange(v, r.ideal)) return 'normal'
+  if (inRange(v, r.acceptable)) return 'warn'
+  return 'bad'
+}
+
+/** Chlore combiné (CC): normal=0–0.2 mg/L, warn=0–0.5 mg/L, bad=outside */
+export function getCcStatus(v: number, ranges?: DynamicRanges): ParamStatus {
+  const r = ranges?.cc ?? PARAM_RANGES.cc
+  if (inRange(v, r.ideal)) return 'normal'
+  if (inRange(v, r.acceptable)) return 'warn'
   return 'bad'
 }
 
@@ -354,7 +458,7 @@ export function getTreatmentsThisMonth(
 /**
  * Computes recommended to-do items based on action history and measured params.
  */
-export function getTodoItems(actions: Action[], params: MeasuredParams): TodoItem[] {
+export function getTodoItems(actions: Action[], params: MeasuredParams, t: (key: TranslationKey) => string): TodoItem[] {
   const items: TodoItem[] = []
 
   // pH measurement: warn after 5 days, cycle 7 days
@@ -365,13 +469,13 @@ export function getTodoItems(actions: Action[], params: MeasuredParams): TodoIte
       id: 'ph-measure',
       icon: '⚗️',
       iconBg: overdue ? '#feecec' : '#fff4e0',
-      title: 'Mesure du pH',
-      subtitle: 'Recommandé tous les 7 jours',
+      title: t('todo_ph_title'),
+      subtitle: t('todo_ph_subtitle'),
       delay: nextPh === null
-        ? 'Jamais mesuré'
+        ? t('kpi_jamais_mesure')
         : overdue
-          ? `En retard (${Math.abs(nextPh)} j)`
-          : `Dans ${nextPh} j`,
+          ? `${t('kpi_en_retard')} (${Math.abs(nextPh)} ${t('todo_j_abbr')})`
+          : `${t('kpi_dans')} ${nextPh} ${t('todo_j_abbr')}`,
       isOverdue: overdue || nextPh === null,
     })
   }
@@ -387,9 +491,9 @@ export function getTodoItems(actions: Action[], params: MeasuredParams): TodoIte
       id: 'filter-maintenance',
       icon: '🔧',
       iconBg: '#feecec',
-      title: 'Entretien du filtre',
-      subtitle: 'Nettoyage cartouche ou contre-lavage',
-      delay: filterDays === null ? 'Jamais fait' : `En retard (${filterDays} j)`,
+      title: t('todo_filtre_title'),
+      subtitle: t('todo_filtre_subtitle'),
+      delay: filterDays === null ? t('todo_jamais_fait') : `${t('kpi_en_retard')} (${filterDays} ${t('todo_j_abbr')})`,
       isOverdue: true,
     })
   }
@@ -400,9 +504,9 @@ export function getTodoItems(actions: Action[], params: MeasuredParams): TodoIte
       id: 'chlore-low',
       icon: '⚠️',
       iconBg: '#fff4e0',
-      title: 'Chlore faible',
-      subtitle: `Chlore libre : ${params.chlore} mg/L (min. recommandé : 1 mg/L)`,
-      delay: 'Vérifier',
+      title: t('todo_chlore_faible_title'),
+      subtitle: `${t('param_chlore')} : ${params.chlore} mg/L (${t('todo_chlore_min_recommande')})`,
+      delay: t('todo_verifier'),
       isOverdue: false,
     })
   }
@@ -462,7 +566,7 @@ export function getChloreHistory(actions: Action[], limit = 7): ChlorePoint[] {
   const result: ChlorePoint[] = []
   for (const a of [...actions].sort((x, y) => x.date.localeCompare(y.date))) {
     if (!MEASURE_ACTION_TYPES.includes(a.action_type)) continue
-    const m = a.notes.match(/chlore?\s*(?:libre)?\s*:?\s*([\d.]+)/i)
+    const m = a.notes.match(RX_CHLORE)
     if (m) {
       const v = parseFloat(m[1])
       if (!isNaN(v)) result.push({ date: a.date, chlore: v })

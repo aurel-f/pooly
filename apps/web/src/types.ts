@@ -1,3 +1,5 @@
+import type { TempUnit, SaltUnit, ConcUnit, DureteUnit } from './units'
+
 export type Product = {
   id: number
   name: string
@@ -30,7 +32,13 @@ export type Installation = {
   user_id: number
   name: string
   type: 'piscine' | 'spa'
-  sanitizer: 'brome' | 'chlore'
+  sanitizer: 'brome' | 'chlore' | 'sel'
+  volume?: number | null
+  volume_unit?: 'L' | 'gal'
+  temp_unit?: TempUnit
+  salt_unit?: SaltUnit
+  conc_unit?: ConcUnit
+  durete_unit?: DureteUnit
   created_at: string
 }
 
@@ -40,4 +48,8 @@ export type InstallationWaterParams = {
   temp: { ideal: [number, number]; acceptable: [number, number] }
   cl?: { ideal: [number, number]; acceptable: [number, number] }
   br?: { ideal: [number, number]; acceptable: [number, number] }
+  salt?: { ideal: [number, number]; acceptable: [number, number] }
+  cya?: { ideal: [number, number]; acceptable: [number, number] }
+  cc?: { ideal: [number, number]; acceptable: [number, number] }
+  durete?: { ideal: [number, number]; acceptable: [number, number] }
 }

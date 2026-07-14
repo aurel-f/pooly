@@ -27,30 +27,89 @@ limiter = Limiter(key_func=get_remote_address)
 
 WATER_PARAMS: Dict[Tuple[str, str], Dict] = {
     ("piscine", "brome"): {
-        "ph":   {"ideal": (7.2, 7.6), "acceptable": (6.8, 7.8)},
-        "br":   {"ideal": (2.0, 5.0), "acceptable": (1.0, 10.0)},
-        "tac":  {"ideal": (80, 180),  "acceptable": (60, 200)},
-        "temp": {"ideal": (24, 28),   "acceptable": (15, 35)},
+        "ph":     {"ideal": (7.2, 7.6), "acceptable": (6.8, 7.8)},
+        "br":     {"ideal": (2.0, 5.0), "acceptable": (1.0, 10.0)},
+        "tac":    {"ideal": (80, 180),  "acceptable": (60, 200)},
+        "temp":   {"ideal": (24, 28),   "acceptable": (15, 35)},
+        "durete": {"ideal": (100, 500), "acceptable": (50, 1000)},
     },
     ("piscine", "chlore"): {
-        "ph":   {"ideal": (7.2, 7.6), "acceptable": (6.8, 7.8)},
-        "cl":   {"ideal": (1.0, 3.0), "acceptable": (0.5, 4.0)},
-        "tac":  {"ideal": (80, 180),  "acceptable": (60, 200)},
-        "temp": {"ideal": (24, 28),   "acceptable": (15, 35)},
+        "ph":     {"ideal": (7.2, 7.6), "acceptable": (6.8, 7.8)},
+        "cl":     {"ideal": (1.0, 3.0), "acceptable": (0.5, 4.0)},
+        "cc":     {"ideal": (0, 0.2),   "acceptable": (0, 0.5)},
+        "tac":    {"ideal": (80, 180),  "acceptable": (60, 200)},
+        "temp":   {"ideal": (24, 28),   "acceptable": (15, 35)},
+        "durete": {"ideal": (100, 500), "acceptable": (50, 1000)},
     },
     ("spa", "brome"): {
-        "ph":   {"ideal": (7.2, 7.6), "acceptable": (6.8, 7.8)},
-        "br":   {"ideal": (3.0, 6.0), "acceptable": (2.0, 10.0)},
-        "tac":  {"ideal": (80, 180),  "acceptable": (60, 200)},
-        "temp": {"ideal": (36, 40),   "acceptable": (30, 42)},
+        "ph":     {"ideal": (7.2, 7.6), "acceptable": (6.8, 7.8)},
+        "br":     {"ideal": (3.0, 6.0), "acceptable": (2.0, 10.0)},
+        "tac":    {"ideal": (80, 180),  "acceptable": (60, 200)},
+        "temp":   {"ideal": (36, 40),   "acceptable": (30, 42)},
+        "durete": {"ideal": (100, 500), "acceptable": (50, 1000)},
     },
     ("spa", "chlore"): {
-        "ph":   {"ideal": (7.2, 7.6), "acceptable": (6.8, 7.8)},
-        "cl":   {"ideal": (3.0, 5.0), "acceptable": (2.0, 6.0)},
-        "tac":  {"ideal": (80, 180),  "acceptable": (60, 200)},
-        "temp": {"ideal": (36, 40),   "acceptable": (30, 42)},
+        "ph":     {"ideal": (7.2, 7.6), "acceptable": (6.8, 7.8)},
+        "cl":     {"ideal": (3.0, 5.0), "acceptable": (2.0, 6.0)},
+        "cc":     {"ideal": (0, 0.2),   "acceptable": (0, 0.5)},
+        "tac":    {"ideal": (80, 180),  "acceptable": (60, 200)},
+        "temp":   {"ideal": (36, 40),   "acceptable": (30, 42)},
+        "durete": {"ideal": (100, 500), "acceptable": (50, 1000)},
+    },
+    ("piscine", "sel"): {
+        "ph":     {"ideal": (7.2, 7.6),   "acceptable": (6.8, 7.8)},
+        "salt":   {"ideal": (2700, 3400), "acceptable": (2500, 4500)},
+        "cya":    {"ideal": (60, 80),     "acceptable": (30, 100)},
+        "cl":     {"ideal": (1.0, 3.0),   "acceptable": (0.5, 4.0)},
+        "cc":     {"ideal": (0, 0.2),     "acceptable": (0, 0.5)},
+        "tac":    {"ideal": (80, 180),    "acceptable": (60, 200)},
+        "temp":   {"ideal": (24, 28),     "acceptable": (15, 35)},
+        "durete": {"ideal": (100, 500),   "acceptable": (50, 1000)},
+    },
+    # Salt spas are far less standardized than salt pools; this band is an
+    # approximation pending better field data.
+    ("spa", "sel"): {
+        "ph":     {"ideal": (7.2, 7.6),   "acceptable": (6.8, 7.8)},
+        "salt":   {"ideal": (2500, 3200), "acceptable": (2000, 4000)},
+        "cya":    {"ideal": (30, 50),     "acceptable": (0, 80)},
+        "cl":     {"ideal": (3.0, 5.0),   "acceptable": (2.0, 6.0)},
+        "cc":     {"ideal": (0, 0.2),     "acceptable": (0, 0.5)},
+        "tac":    {"ideal": (80, 180),    "acceptable": (60, 200)},
+        "temp":   {"ideal": (36, 40),     "acceptable": (30, 42)},
+        "durete": {"ideal": (100, 500),   "acceptable": (50, 1000)},
     },
 }
+
+
+def _apply_range_overrides(target: Optional[Dict[Tuple[str, str], Dict]] = None) -> None:
+    """Applies RANGE_<TYPE>_<SANITIZER>_<PARAM>_{IDEAL,ACCEPTABLE}_{MIN,MAX} env var
+    overrides onto WATER_PARAMS (or an explicit `target` dict, for tests). Only
+    overrides (type, sanitizer, param) combos that already exist in the dict — never
+    invents new param keys for a combo that doesn't have them."""
+    params = WATER_PARAMS if target is None else target
+    applied: List[str] = []
+    for (inst_type, sanitizer), params_for_combo in params.items():
+        for param, ranges in params_for_combo.items():
+            for band in ("ideal", "acceptable"):
+                lo, hi = ranges[band]
+                prefix = f"RANGE_{inst_type.upper()}_{sanitizer.upper()}_{param.upper()}_{band.upper()}"
+                min_env = os.getenv(f"{prefix}_MIN")
+                max_env = os.getenv(f"{prefix}_MAX")
+                new_lo = float(min_env) if min_env is not None else lo
+                new_hi = float(max_env) if max_env is not None else hi
+                if min_env is not None or max_env is not None:
+                    applied.append(f"{prefix}=({new_lo}, {new_hi})")
+                ranges[band] = (new_lo, new_hi)
+    if target is None and applied:
+        # Routed through uvicorn's own logger (not the root logger, which uvicorn
+        # never configures) so this is guaranteed to reach `docker logs` at the
+        # default log level, right alongside uvicorn's own startup lines.
+        logging.getLogger("uvicorn.error").info(
+            "Water param range overrides applied: %s", ", ".join(applied)
+        )
+
+
+_apply_range_overrides()
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -97,6 +156,24 @@ def _ensure_first_name_column(session: Session) -> None:
     session.commit()
 
 
+def _ensure_volume_columns(session: Session) -> None:
+    if engine.dialect.name != "postgresql":
+        return
+    session.exec(text("ALTER TABLE installation ADD COLUMN IF NOT EXISTS volume DOUBLE PRECISION"))
+    session.exec(text("ALTER TABLE installation ADD COLUMN IF NOT EXISTS volume_unit VARCHAR NOT NULL DEFAULT 'L'"))
+    session.commit()
+
+
+def _ensure_measurement_unit_columns(session: Session) -> None:
+    if engine.dialect.name != "postgresql":
+        return
+    session.exec(text("ALTER TABLE installation ADD COLUMN IF NOT EXISTS temp_unit VARCHAR NOT NULL DEFAULT 'C'"))
+    session.exec(text("ALTER TABLE installation ADD COLUMN IF NOT EXISTS salt_unit VARCHAR NOT NULL DEFAULT 'ppm'"))
+    session.exec(text("ALTER TABLE installation ADD COLUMN IF NOT EXISTS conc_unit VARCHAR NOT NULL DEFAULT 'mg/L'"))
+    session.exec(text("ALTER TABLE installation ADD COLUMN IF NOT EXISTS durete_unit VARCHAR NOT NULL DEFAULT 'ppm'"))
+    session.commit()
+
+
 def _migrate_installations(session: Session) -> None:
     if engine.dialect.name != "postgresql":
         return
@@ -125,10 +202,18 @@ def _migrate_installations(session: Session) -> None:
 
     for row in users_without:
         uid = int(row[0])
+        # NOT NULL columns must be listed explicitly: SQLModel Field(default=...) is a
+        # Python-side default only, not a DB server_default, so raw SQL bypasses it. On
+        # a brand-new database, create_all() creates these columns without a DEFAULT
+        # clause (that only gets attached later by the ALTER TABLE migrations below,
+        # which are no-ops here since the columns already exist) — omitting a value
+        # would violate the NOT NULL constraint.
         session.exec(
             text("""
-                INSERT INTO installation (user_id, name, type, sanitizer, created_at)
-                VALUES (:uid, 'Ma piscine', 'piscine', 'brome', NOW())
+                INSERT INTO installation
+                    (user_id, name, type, sanitizer, volume_unit, temp_unit, salt_unit, conc_unit, durete_unit, created_at)
+                VALUES
+                    (:uid, 'Ma piscine', 'piscine', 'brome', 'L', 'C', 'ppm', 'mg/L', 'ppm', NOW())
             """).bindparams(uid=uid)
         )
     if users_without:
@@ -177,6 +262,8 @@ async def lifespan(app: FastAPI):
     with Session(engine) as session:
         _ensure_user_id_column(session)
         _ensure_first_name_column(session)
+        _ensure_volume_columns(session)
+        _ensure_measurement_unit_columns(session)
         insert_seeds(session)
         _ensure_admin_user(session)
         _migrate_installations(session)
@@ -254,12 +341,24 @@ class InstallationIn(BaseModel):
     name: str = "Ma piscine"
     type: str = "piscine"
     sanitizer: str = "brome"
+    volume: Optional[float] = None
+    volume_unit: str = "L"
+    temp_unit: str = "C"
+    salt_unit: str = "ppm"
+    conc_unit: str = "mg/L"
+    durete_unit: str = "ppm"
 
 
 class InstallationPatchIn(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
     sanitizer: Optional[str] = None
+    volume: Optional[float] = None
+    volume_unit: Optional[str] = None
+    temp_unit: Optional[str] = None
+    salt_unit: Optional[str] = None
+    conc_unit: Optional[str] = None
+    durete_unit: Optional[str] = None
 
 
 class InstallationOut(BaseModel):
@@ -267,6 +366,12 @@ class InstallationOut(BaseModel):
     name: str
     type: str
     sanitizer: str
+    volume: Optional[float] = None
+    volume_unit: str = "L"
+    temp_unit: str = "C"
+    salt_unit: str = "ppm"
+    conc_unit: str = "mg/L"
+    durete_unit: str = "ppm"
     created_at: datetime
 
 
@@ -475,6 +580,12 @@ def create_installation(
         name=payload.name,
         type=payload.type,
         sanitizer=payload.sanitizer,
+        volume=payload.volume,
+        volume_unit=payload.volume_unit,
+        temp_unit=payload.temp_unit,
+        salt_unit=payload.salt_unit,
+        conc_unit=payload.conc_unit,
+        durete_unit=payload.durete_unit,
     )
     session.add(installation)
     session.commit()
@@ -498,6 +609,18 @@ def update_installation(
         installation.type = payload.type
     if payload.sanitizer is not None:
         installation.sanitizer = payload.sanitizer
+    if payload.volume is not None:
+        installation.volume = payload.volume
+    if payload.volume_unit is not None:
+        installation.volume_unit = payload.volume_unit
+    if payload.temp_unit is not None:
+        installation.temp_unit = payload.temp_unit
+    if payload.salt_unit is not None:
+        installation.salt_unit = payload.salt_unit
+    if payload.conc_unit is not None:
+        installation.conc_unit = payload.conc_unit
+    if payload.durete_unit is not None:
+        installation.durete_unit = payload.durete_unit
     session.add(installation)
     session.commit()
     session.refresh(installation)

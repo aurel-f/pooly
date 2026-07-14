@@ -34,7 +34,13 @@ class Installation(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     name: str = Field(default="Ma piscine")
     type: str = Field(default="piscine")        # "piscine" | "spa"
-    sanitizer: str = Field(default="brome")     # "brome" | "chlore"
+    sanitizer: str = Field(default="brome")     # "brome" | "chlore" | "sel"
+    volume: Optional[float] = Field(default=None)
+    volume_unit: str = Field(default="L")       # "L" | "gal"
+    temp_unit: str = Field(default="C")         # "C" | "F"
+    salt_unit: str = Field(default="ppm")       # "ppm" | "g/L"
+    conc_unit: str = Field(default="mg/L")      # "mg/L" | "ppm"
+    durete_unit: str = Field(default="ppm")     # "ppm" | "°dH" | "°f"
     created_at: datetime = Field(default_factory=datetime.now)
 
 

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useInstallation } from '../context/InstallationContext'
 import { useT } from '../context/LocaleContext'
+import type { TempUnit, SaltUnit, ConcUnit, DureteUnit } from '../units'
 
 type Props = {
   open: boolean
@@ -16,7 +17,13 @@ export default function InstallationModal({ open, onClose }: Props) {
   const { addInstallation } = useInstallation()
   const [name, setName] = useState('')
   const [type, setType] = useState<'piscine' | 'spa'>('piscine')
-  const [sanitizer, setSanitizer] = useState<'brome' | 'chlore'>('chlore')
+  const [sanitizer, setSanitizer] = useState<'brome' | 'chlore' | 'sel'>('chlore')
+  const [volume, setVolume] = useState('')
+  const [volumeUnit, setVolumeUnit] = useState<'L' | 'gal'>('L')
+  const [tempUnit, setTempUnit] = useState<TempUnit>('C')
+  const [saltUnit, setSaltUnit] = useState<SaltUnit>('ppm')
+  const [concUnit, setConcUnit] = useState<ConcUnit>('mg/L')
+  const [dureteUnit, setDureteUnit] = useState<DureteUnit>('ppm')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,13 +33,29 @@ export default function InstallationModal({ open, onClose }: Props) {
     setLoading(true)
     setError(null)
     try {
-      await addInstallation({ name: name.trim(), type, sanitizer })
+      const parsedVolume = volume.trim() ? parseFloat(volume) : undefined
+      await addInstallation({
+        name: name.trim(),
+        type,
+        sanitizer,
+        temp_unit: tempUnit,
+        salt_unit: saltUnit,
+        conc_unit: concUnit,
+        durete_unit: dureteUnit,
+        ...(parsedVolume !== undefined && !isNaN(parsedVolume) ? { volume: parsedVolume, volume_unit: volumeUnit } : {}),
+      })
       setName('')
       setType('piscine')
       setSanitizer('chlore')
+      setVolume('')
+      setVolumeUnit('L')
+      setTempUnit('C')
+      setSaltUnit('ppm')
+      setConcUnit('mg/L')
+      setDureteUnit('ppm')
       onClose()
-    } catch (err) {
-      setError((err as Error).message)
+    } catch {
+      setError(t('modal_install_erreur_creation'))
     } finally {
       setLoading(false)
     }
@@ -52,6 +75,21 @@ export default function InstallationModal({ open, onClose }: Props) {
     transition: 'border-color 0.15s, background 0.15s',
   }
 
+  const unitRowLabel: React.CSSProperties = {
+    flex: 1, fontFamily: '"Sora", sans-serif', fontSize: 12, color: 'var(--text-secondary)',
+  }
+
+  const unitPillStyle = (active: boolean): React.CSSProperties => ({
+    ...pillBase,
+    flex: 'none',
+    minWidth: 48,
+    padding: '5px 10px',
+    fontSize: 11,
+    borderColor: active ? 'rgba(56,189,248,0.35)' : 'var(--border)',
+    background: active ? 'rgba(56,189,248,0.1)' : 'var(--bg-surface-2)',
+    color: active ? '#38bdf8' : 'var(--text-secondary)',
+  })
+
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
       <DialogContent className="sm:max-w-sm">
@@ -69,7 +107,7 @@ export default function InstallationModal({ open, onClose }: Props) {
               id="inst-name"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Ma piscine, Spa du jardin…"
+              placeholder={t('modal_install_nom_placeholder')}
             />
           </div>
 
@@ -100,7 +138,7 @@ export default function InstallationModal({ open, onClose }: Props) {
           <div style={{ display: 'grid', gap: 8 }}>
             <Label>{t('modal_install_desinfectant')}</Label>
             <div style={{ display: 'flex', gap: 8 }}>
-              {([['chlore', t('modal_install_chlore')], ['brome', t('modal_install_brome')]] as const).map(([s, label]) => (
+              {([['chlore', t('modal_install_chlore')], ['brome', t('modal_install_brome')], ['sel', t('modal_install_sel')]] as const).map(([s, label]) => (
                 <button
                   key={s}
                   type="button"
@@ -115,6 +153,87 @@ export default function InstallationModal({ open, onClose }: Props) {
                   {label}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Capacité */}
+          <div style={{ display: 'grid', gap: 8 }}>
+            <Label htmlFor="inst-volume">{t('modal_install_capacite')}</Label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input
+                id="inst-volume"
+                type="number"
+                min="0"
+                step="any"
+                value={volume}
+                onChange={e => setVolume(e.target.value)}
+                placeholder="45000"
+                style={{ flex: 1 }}
+              />
+              {(['L', 'gal'] as const).map(u => (
+                <button
+                  key={u}
+                  type="button"
+                  onClick={() => setVolumeUnit(u)}
+                  style={{
+                    ...pillBase,
+                    flex: 'none',
+                    minWidth: 56,
+                    borderColor: volumeUnit === u ? 'rgba(56,189,248,0.35)' : 'var(--border)',
+                    background: volumeUnit === u ? 'rgba(56,189,248,0.1)' : 'var(--bg-surface-2)',
+                    color: volumeUnit === u ? '#38bdf8' : 'var(--text-secondary)',
+                  }}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Unités de mesure */}
+          <div style={{ display: 'grid', gap: 8 }}>
+            <Label>{t('modal_install_unites')}</Label>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={unitRowLabel}>{t('unit_temperature')}</span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['C', 'F'] as const).map(u => (
+                    <button key={u} type="button" onClick={() => setTempUnit(u)} style={unitPillStyle(tempUnit === u)}>
+                      °{u}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={unitRowLabel}>{t('unit_sel')}</span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['ppm', 'g/L'] as const).map(u => (
+                    <button key={u} type="button" onClick={() => setSaltUnit(u)} style={unitPillStyle(saltUnit === u)}>
+                      {u}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={unitRowLabel}>{t('unit_concentration')}</span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['mg/L', 'ppm'] as const).map(u => (
+                    <button key={u} type="button" onClick={() => setConcUnit(u)} style={unitPillStyle(concUnit === u)}>
+                      {u}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={unitRowLabel}>{t('unit_durete')}</span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['ppm', '°dH', '°f'] as const).map(u => (
+                    <button key={u} type="button" onClick={() => setDureteUnit(u)} style={unitPillStyle(dureteUnit === u)}>
+                      {u}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 

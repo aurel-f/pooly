@@ -8,9 +8,12 @@ import {
   getTacStatus,
   getTempStatus,
   extractMeasuredParams,
+  translateLabel,
 } from '../utils'
 import { useT } from '../context/LocaleContext'
-import type { Locale } from '../i18n/translations'
+import { useInstallation } from '../context/InstallationContext'
+import type { Locale, TranslationKey } from '../i18n/translations'
+import { ACTION_TYPE_LABELS, PRODUCT_LABELS } from './ActionForm'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -37,14 +40,14 @@ function getCategory(action: Action): Category {
   return 'entretien'
 }
 
-function getTitle(action: Action, products: Product[]): string {
-  if (action.action_type === 'Mesure' || action.action_type === 'Mesure de pH') return 'Mesure'
+function getTitle(action: Action, products: Product[], t: (key: TranslationKey) => string): string {
+  if (action.action_type === 'Mesure' || action.action_type === 'Mesure de pH') return t('action_type_mesure')
   if (action.action_type === 'Ajout de produit') {
     const p = products.find(p => p.id === action.product_id)
-    if (p) return p.name
-    return 'Ajout de produit'
+    if (p) return translateLabel(t, PRODUCT_LABELS, p.name)
+    return t('action_type_ajout_produit')
   }
-  return action.action_type
+  return translateLabel(t, ACTION_TYPE_LABELS, action.action_type)
 }
 
 const CATEGORY_ICON: Record<Category, { emoji: string; bg: string }> = {
@@ -76,6 +79,7 @@ function Pill({ label, color, bg }: { label: string; color: string; bg: string }
 }
 
 function ParamPills({ action }: { action: Action }) {
+  const { active } = useInstallation()
   const p = extractMeasuredParams([action])
   const pills: { label: string; status: 'normal' | 'warn' | 'bad' }[] = []
 
@@ -83,13 +87,13 @@ function ParamPills({ action }: { action: Action }) {
     pills.push({ label: `pH ${p.ph.toFixed(1)}`, status: getPhStatus(p.ph) })
   }
   if (p.chlore !== null) {
-    pills.push({ label: `Cl ${p.chlore.toFixed(1)} mg/L`, status: getChloreStatus(p.chlore) })
+    pills.push({ label: `Cl ${p.chlore.toFixed(1)} ${active?.conc_unit ?? 'mg/L'}`, status: getChloreStatus(p.chlore) })
   }
   if (p.tac !== null) {
-    pills.push({ label: `TAC ${Math.round(p.tac)} mg/L`, status: getTacStatus(p.tac) })
+    pills.push({ label: `TAC ${Math.round(p.tac)} ${active?.conc_unit ?? 'mg/L'}`, status: getTacStatus(p.tac) })
   }
   if (p.temp !== null) {
-    pills.push({ label: `${p.temp.toFixed(1)} °C`, status: getTempStatus(p.temp) })
+    pills.push({ label: `${p.temp.toFixed(1)} °${active?.temp_unit ?? 'C'}`, status: getTempStatus(p.temp) })
   }
 
   if (pills.length === 0) return null
@@ -113,7 +117,7 @@ function EntryCard({ action, products, onEdit, onDelete }: {
   const { t } = useT()
   const [hovered, setHovered] = useState(false)
   const cat = getCategory(action)
-  const title = getTitle(action, products)
+  const title = getTitle(action, products, t)
   const { emoji, bg: iconBg } = CATEGORY_ICON[cat]
 
   const STATUS_CFG = {
@@ -123,8 +127,8 @@ function EntryCard({ action, products, onEdit, onDelete }: {
   }
 
   const TYPE_PILL: Record<'traitement' | 'entretien', { label: string; color: string; bg: string }> = {
-    traitement: { label: t('historique_traitements').split(' ').slice(1).join(' '), color: 'var(--badge-purple-text)', bg: 'var(--badge-purple-bg)' },
-    entretien:  { label: t('historique_entretiens').split(' ').slice(1).join(' '),  color: 'var(--badge-blue-text)',   bg: 'var(--badge-blue-bg)'   },
+    traitement: { label: t('historique_traitement_badge'), color: 'var(--badge-purple-text)', bg: 'var(--badge-purple-bg)' },
+    entretien:  { label: t('historique_entretien_badge'),  color: 'var(--badge-blue-text)',   bg: 'var(--badge-blue-bg)'   },
   }
 
   // Status badge (mesure) or type pill (traitement/entretien)
@@ -148,6 +152,9 @@ function EntryCard({ action, products, onEdit, onDelete }: {
       .replace(/temp[eé]rature\s*:\s*[\d.]+\.?\s*/gi, '')
       .replace(/brome\s*(?:total)?\s*:\s*[\d.]+\.?\s*/gi, '')
       .replace(/dur[eé]t[eé]\s*(?:totale?)?\s*:\s*[\d.]+\.?\s*/gi, '')
+      .replace(/sel\s*:\s*[\d.]+\.?\s*/gi, '')
+      .replace(/stabilisant\s*:\s*[\d.]+\.?\s*/gi, '')
+      .replace(/combin[ée]?\s*:\s*[\d.]+\.?\s*/gi, '')
       .replace(/^[\s.]+/, '')
       .trim()
     : action.notes.trim()
@@ -266,14 +273,14 @@ export default function HistoriquePage({ actions, products, onEdit, onDelete }: 
       .filter(a => {
         if (filter !== 'all' && getCategory(a) !== filter) return false
         if (q) {
-          const title = getTitle(a, products).toLowerCase()
+          const title = getTitle(a, products, t).toLowerCase()
           const note = a.notes.toLowerCase()
           if (!title.includes(q) && !note.includes(q)) return false
         }
         return true
       })
       .sort((a, b) => b.date.localeCompare(a.date))
-  }, [actions, products, filter, search])
+  }, [actions, products, filter, search, t])
 
   const grouped = useMemo(() => {
     const map = new Map<string, Action[]>()
